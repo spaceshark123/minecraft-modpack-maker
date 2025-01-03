@@ -6,7 +6,7 @@ function ModsInput() {
 		<div className="flex flex-col space-y-1.5">
 			<Label htmlFor="mods-input">Mods</Label>
 			<EditableList id="mods-input" placeholder='Paste your mods here...' />
-    	</div>
+		</div>
 	)
 }
 
