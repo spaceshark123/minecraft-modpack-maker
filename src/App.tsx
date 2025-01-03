@@ -1,4 +1,4 @@
-//import { useState } from 'react'
+import { useState, useEffect} from 'react'
 import './App.css'
 import { Button } from "@/components/ui/button"
 import {
@@ -19,7 +19,23 @@ import {
 } from "@/components/ui/select"
 import EditableList from './EditableList'
 
+
 function App() {
+  const [selectedVersion, setSelectedVersion] = useState<string | null>(null);
+
+  const [versions, setVersions] = useState<string[]>([]);
+
+  useEffect(() => {
+    console.log('Fetching versions');
+    // Fetch the JSON file from the public folder
+    fetch('/versions/minecraft-versions.json')
+      .then((response) => response.json())
+      .then((data) => {
+        setVersions(data);
+      });
+    console.log('Fetched versions');
+  }, []);
+
   return (
     <>
       <Card className='pr-10 pl-10 min-w-[30vw]'>
@@ -48,6 +64,19 @@ function App() {
                   </SelectContent>
                 </Select>
               </div>
+              <div className="flex flex-col space-y-1.5 mt-2">
+              <Label htmlFor="version">Minecraft Version</Label>
+              <Select onValueChange={(value) => setSelectedVersion(value)}>
+                <SelectTrigger id="version">
+                  <SelectValue placeholder="Select Minecraft Version" />
+                </SelectTrigger>
+                <SelectContent position="popper" className="overflow-y-auto max-h-60">
+                  {versions.map((version) => (
+                    <SelectItem key={version} value={version}>{version}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
               <Button type='submit' variant='secondary' className='w-full'>Construct Modpack</Button>
             </div>
           </form>
