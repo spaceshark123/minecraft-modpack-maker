@@ -13,20 +13,22 @@ const sites = [
 	{ id: "curseforge", name: "Curseforge" },
 ]
 
-function SiteSelector() {
-	const [selectedSites, setSelectedSites] = useState<string[]>([])
+interface SiteSelectorProps {
+	selectedSites: string[];
+	update: (value: string[]) => void;
+}
+
+function SiteSelector({ selectedSites, update }: SiteSelectorProps) {
 
 	const handleSiteToggle = (siteId: string) => {
 		if (siteId === "placeholder") return; // Do nothing for placeholder
-		setSelectedSites((prev) => {
-			if (prev.includes(siteId)) {
-				// Prevent unchecking if it's the only selected site
-				if (prev.length === 1) return prev;
-				return prev.filter((id) => id !== siteId);
-			} else {
-				return [...prev, siteId];
+		if (selectedSites.includes(siteId)) {
+			if(selectedSites.length !== 1) { // If there is only one site selected, don't allow it to be unselected
+				update(selectedSites.filter((id) => id !== siteId));
 			}
-		});
+		} else {
+			update([...selectedSites, siteId]);
+		}
 	};
 
 	return (

@@ -9,15 +9,16 @@ import {
 	SelectValue
 } from "@/components/ui/select"
 
+interface ModLoaderChooserProps {
+	update: (value: string | null) => void;
+}
 
-function ModLoaderChooser() {
-	const [selectedLoader, setSelectedLoader] = useState<string | null>(null);
-
+function ModLoaderChooser({ update }: ModLoaderChooserProps) {
 	return (
 		<div className="flex flex-col space-y-1.5">
-			<Label htmlFor="framework">Mod Loader</Label>
-			<Select onValueChange={(value) => setSelectedLoader(value)}>
-				<SelectTrigger id="framework">
+			<Label htmlFor="loader">Mod Loader</Label>
+			<Select onValueChange={(value) => update(value as string)}>
+				<SelectTrigger id="loader">
 					<SelectValue placeholder="Select" />
 				</SelectTrigger>
 				<SelectContent position="popper">

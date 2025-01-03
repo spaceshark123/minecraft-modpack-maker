@@ -3,10 +3,11 @@ import { Textarea } from "@/components/ui/textarea"
 interface EditableListProps {
 	placeholder?: string;
 	id?: string;
+	update: (value: string[]) => void;
 }
 
 // Define the component
-const EditableList: React.FC<EditableListProps> = ({ placeholder, id }) => {
+function EditableList ({ placeholder, id, update}: EditableListProps) {
 	// Function to handle pasted input
 	const handlePaste = (event: React.ClipboardEvent<HTMLTextAreaElement>) => {
 		event.preventDefault();
@@ -18,7 +19,11 @@ const EditableList: React.FC<EditableListProps> = ({ placeholder, id }) => {
 		const newItems = pastedText.split(/[\n,]+/).map((item) => item.trim()).filter(Boolean);
 
 		// append new items to the list. if there is no newline between the current content and the pasted content, add a newline
-		event.currentTarget.value += (event.currentTarget.value ? '\n' : '') + newItems.join('\n');
+		event.currentTarget.value += (event.currentTarget.value && !event.currentTarget.value.endsWith('\n') ? '\n' : '') + newItems.join('\n');
+
+		// trigger the change event
+		const changeEvent = new Event('input', { bubbles: true });
+		event.currentTarget.dispatchEvent(changeEvent);
 	};
 
 	return (
@@ -30,6 +35,14 @@ const EditableList: React.FC<EditableListProps> = ({ placeholder, id }) => {
 				placeholder={placeholder || "Paste your list here..."}
 				className="max-h-64 h-[50vh] scrollbar-thin scrollbar-thumb-rounded scrollbar-thumb-gray-400 scrollbar-track-gray-100"
 				onPaste={handlePaste}
+				onInput={(event) => {
+					// Split the input by newlines and remove empty strings
+					const items = event.currentTarget.value.split(/[\n,]+/).map((item) => item.trim()).filter(Boolean);
+
+					// Update the parent component with the new list
+					update(items);
+					console.log(items);
+				}}
 			/>
 		</div>
 	);

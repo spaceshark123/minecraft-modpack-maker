@@ -15,6 +15,10 @@ import VersionChooser from './VersionChooser'
 import WebsiteSelector from './WebsiteSelector'
 
 function App() {
+	const [mods, setMods] = useState<string[]>([]);
+	const [selectedLoader, setSelectedLoader] = useState<string | null>(null);
+	const [selectedVersion, setSelectedVersion] = useState<string | null>(null);
+	const [selectedSites, setSelectedSites] = useState<string[]>([]);
 
 	return (
 		<>
@@ -26,10 +30,10 @@ function App() {
 				<CardContent>
 					<form>
 						<div className="grid w-full items-center gap-4">
-							<ModsInput />
-							<ModLoaderChooser />
-							<VersionChooser />
-							<WebsiteSelector />
+							<ModsInput update={setMods} />
+							<ModLoaderChooser update={setSelectedLoader} />
+							<VersionChooser update={setSelectedVersion} />
+							<WebsiteSelector selectedSites={selectedSites} update={setSelectedSites} />
 							<Button type='submit' variant='secondary' className='w-full'>Construct Modpack</Button>
 						</div>
 					</form>
