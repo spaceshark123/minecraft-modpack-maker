@@ -9,32 +9,12 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import { Label } from "@/components/ui/label"
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from "@/components/ui/select"
-import EditableList from './EditableList'
+import ModLoaderChooser from './ModLoaderChooser'
+import ModsInput from './ModsInput'
+import VersionChooser from './VersionChooser'
 
 
 function App() {
-  const [selectedVersion, setSelectedVersion] = useState<string | null>(null);
-
-  const [versions, setVersions] = useState<string[]>([]);
-
-  useEffect(() => {
-    console.log('Fetching versions');
-    // Fetch the JSON file from the public folder
-    fetch('/versions/minecraft-versions.json')
-      .then((response) => response.json())
-      .then((data) => {
-        setVersions(data);
-      });
-    console.log('Fetched versions');
-  }, []);
 
   return (
     <>
@@ -46,37 +26,9 @@ function App() {
         <CardContent>
           <form>
             <div className="grid w-full items-center gap-4">
-              <div className="flex flex-col space-y-1.5">
-                <Label htmlFor="mods-input">Mods</Label>
-                <EditableList id="mods-input" placeholder='Paste your mods here...'/>
-              </div>
-              <div className="flex flex-col space-y-1.5">
-                <Label htmlFor="framework">Mod Loader</Label>
-                <Select>
-                  <SelectTrigger id="framework">
-                    <SelectValue placeholder="Select" />
-                  </SelectTrigger>
-                  <SelectContent position="popper">
-                    <SelectItem value="forge">Forge</SelectItem>
-                    <SelectItem value="fabric">Fabric</SelectItem>
-                    <SelectItem value="neoforge">NeoForge</SelectItem>
-                    <SelectItem value="quilt">Quilt</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex flex-col space-y-1.5 mt-2">
-              <Label htmlFor="version">Minecraft Version</Label>
-              <Select onValueChange={(value) => setSelectedVersion(value)}>
-                <SelectTrigger id="version">
-                  <SelectValue placeholder="Select Minecraft Version" />
-                </SelectTrigger>
-                <SelectContent position="popper" className="overflow-y-auto max-h-60">
-                  {versions.map((version) => (
-                    <SelectItem key={version} value={version}>{version}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+              <ModsInput />
+              <ModLoaderChooser />
+              <VersionChooser />
               <Button type='submit' variant='secondary' className='w-full'>Construct Modpack</Button>
             </div>
           </form>

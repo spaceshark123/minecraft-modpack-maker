@@ -1,4 +1,3 @@
-import React, { useState } from 'react';
 import { Textarea } from "@/components/ui/textarea"
 
 interface EditableListProps {
@@ -7,7 +6,7 @@ interface EditableListProps {
 }
 
 // Define the component
-const EditableList: React.FC<EditableListProps> = ({ placeholder, id }) => {
+const EditableList: React.FC<EditableListProps> = ({ placeholder, id}) => {
   // Function to handle pasted input
   const handlePaste = (event: React.ClipboardEvent<HTMLTextAreaElement>) => {
 	event.preventDefault();
