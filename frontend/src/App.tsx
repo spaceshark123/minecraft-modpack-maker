@@ -23,7 +23,7 @@ function App() {
 	const constructModpack = async (e: React.FormEvent<HTMLFormElement>) => {
 		e.preventDefault();
 		// get from 3000. it should return text for now
-		const res = await fetch('http://localhost:3000/');
+		const res = await fetch('https://minecraft-modpack-maker.onrender.com/');
 		const data = await res.text();
 		console.log(data);
 	}
