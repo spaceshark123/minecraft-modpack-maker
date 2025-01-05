@@ -1,14 +1,11 @@
 import express from 'express';
-const cors = require('cors');
+import cors from 'cors';
 
 const app = express();
 
 app.use(cors());
 
-app.get('/', (req, res) => {
-	// enable cors
-	res.header('Access-Control-Allow-Origin', '*');
-
+app.get('/api', (req, res) => {
 	res.send('Hello World!');
 });
 
