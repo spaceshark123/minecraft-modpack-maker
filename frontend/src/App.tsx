@@ -20,6 +20,14 @@ function App() {
 	const [selectedVersion, setSelectedVersion] = useState<string | null>(null);
 	const [selectedSites, setSelectedSites] = useState<string[]>([]);
 
+	const constructModpack = async (e: React.FormEvent<HTMLFormElement>) => {
+		e.preventDefault();
+		// get from 3000. it should return text for now
+		const res = await fetch('http://localhost:3000/');
+		const data = await res.text();
+		console.log(data);
+	}
+
 	return (
 		<>
 			<Card className='pr-10 pl-10 min-w-[30vw]'>
@@ -28,7 +36,7 @@ function App() {
 					<CardDescription>Easily download a bunch of mods</CardDescription>
 				</CardHeader>
 				<CardContent>
-					<form>
+					<form onSubmit={constructModpack}>
 						<div className="grid w-full items-center gap-4">
 							<ModsInput update={setMods} />
 							<ModLoaderChooser update={setSelectedLoader} />
