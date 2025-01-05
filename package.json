@@ -8,12 +8,13 @@
     "backend"
   ],
   "scripts": {
-    "start:frontend": "npm --workspace frontend run dev",
+    "start:frontend": "npm --workspace frontend run preview",
+    "dev:frontend": "npm --workspace frontend run dev",
     "start:backend": "npm --workspace backend run start",
-    "start": "concurrently \"npm run start:backend\" \"npm run start:frontend\"",
+    "start": "npm run start:backend",
     "build:frontend": "npm --workspace frontend run build",
     "build:backend": "npm --workspace backend run build",
-    "build": "concurrently \"npm run build:backend\" \"npm run build:frontend\""
+    "build": "npm run build:frontend && npm run build:backend"
   },
   "keywords": [],
   "author": "",
