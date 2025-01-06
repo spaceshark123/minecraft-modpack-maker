@@ -80,16 +80,23 @@ app.get('/api/mod/modrinth', async (req, res) => {
 	}
 	try {
 		// Make an HTTP GET request to the Modrinth mods page with the provided name as a query parameter (q), and the version as a query parameter (v), and the loader as a query parameter (g)
-		const { data } = await axios.get('https://modrinth.com/mods', {
+		const response = await axios.get('https://modrinth.com/mods', {
 			params: {
 				q: name,
 				v: version,
 				g: "categories:" + loader
 			}
+		}).catch((error) => {
+			// if 429 error, return a 429 error
+			if (error.response.status === 429) {
+				res.status(429).json({ error: 'Too many requests. Please try again later.' });
+				return;
+			}
 		});
+		if (!response) return;
 
 		// Load the HTML into Cheerio for parsing
-		const $ = cheerio.load(data);
+		const $ = cheerio.load(response.data);
 
 		// Array to store the scraped mod details
 		let bestMatch = { title: '', link: '', image: '', similarity: 0 };

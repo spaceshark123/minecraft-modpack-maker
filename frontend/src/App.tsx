@@ -83,8 +83,26 @@ function App() {
 			// For each mod, make a request to the backend to get the mod data
 			const url = `/api/mod/modrinth?name=${mod}&version=${selectedVersion}&loader=${selectedLoader}`;
 			const response = await fetch(url);
-			const data = await response.json();
-			modsList.push(data);
+			if (response.status === 429) {
+				toast({
+					title: 'Too many requests',
+					description: 'Please try again later',
+					variant: 'destructive'
+				});
+				setModResults([]);  // Clear mod results
+				setPanelOpen(false);  // Close the panel
+				setLoading(false);    // Stop loading
+				return;
+			} else if (response.status === 404) {
+				toast({
+					description: `${mod} not found`,
+					variant: 'destructive'
+				});
+				modsList.push({ name: mod, error: true });
+			} else {
+				const data = await response.json();
+				modsList.push(data);
+			}
 
 			// Update progress after each mod fetch
 			setProgress(((i + 1) / mods.length) * 100);
@@ -143,6 +161,13 @@ function App() {
 									</thead>
 									<tbody>
 										{modResults.map((mod, index) => (
+											mod.error ?
+												<tr key={index}>
+													<td className="border px-4 py-2" colSpan={3}>
+														{mod.name} not found
+													</td>
+												</tr>
+												:
 											<tr key={index}>
 												<td className="border px-4 py-2">
 													<img src={mod.image} alt={mod.title} className="h-10 w-10 object-cover" />
