@@ -4,19 +4,47 @@ import axios from 'axios';
 import * as cheerio from 'cheerio';
 import { distance as levenshtein } from 'fastest-levenshtein';
 import path from 'path';
+import { spec } from 'node:test/reporters';
 
 const app = express();
 const port = process.env.PORT || 3000;
 
 const loaders = ['fabric', 'forge', 'neoforge', 'quilt'];
-const loaderRegex = new RegExp(`\\(.*?(${loaders.join('|')}}).*?\\)|\\[.*?(${loaders.join('|')}).*?\\]`, 'gi');
+const loaderParenthesisRegex = new RegExp(`\\(.*?(${loaders.join('|')}).*?\\)|\\[.*?(${loaders.join('|')}).*?\\]`, 'gi');
+const loaderEndRegex = new RegExp(`\\s*(-|:)?\\s*(${loaders.join('|')})(/\\s*(${loaders.join('|')}))*\\s*$`, 'i');
+const specialWords = ['&', '|', 'and', 'or', '/', '-', ' '];
 
-const cleanModName = (modName: string) => {
+const cleanModName = (modName: string): string => {
+	// normalize mod name (lowercase, trim, and remove extra spaces)
 	let cleanedModName = modName.toLowerCase().trim().replace(/\s+/g, ' ');
-	cleanedModName = cleanedModName.replace(loaderRegex, '').replace(' - (fabric|forge|neoforge|quilt)', '');
-	cleanedModName = cleanedModName.trim();
+
+	// remove loaders mentioned inside parentheses or square brackets
+	cleanedModName = cleanedModName.replace(loaderParenthesisRegex, '').trim();
+
+	// remove trailing loaders and special words
+	while (cleanedModName.length > 0) {
+		// find and remove trailing loaders
+		const match = cleanedModName.match(loaderEndRegex);
+		if (match) {
+			cleanedModName = cleanedModName.slice(0, match.index).trim();
+			continue;
+		}
+		// find and remove trailing special words
+		let isSpecial = false;
+		for (let word of specialWords) {
+			if (cleanedModName.endsWith(word)) {
+				cleanedModName = cleanedModName.slice(0, cleanedModName.length - word.length).trim();
+				isSpecial = true;
+				break;
+			}
+		}
+		// if no special words were found, stop
+		if (!isSpecial) {
+			break;
+		}
+	}
 	return cleanedModName;
-}
+};
 
 app.use(cors());
 
@@ -34,7 +62,7 @@ app.get('/api', (req, res) => {
 
 // API endpoint to scrape Modrinth for a mod with the provided name
 app.get('/api/mod/modrinth', async (req, res) => {
-	const name = req.query.name as string;
+	const name = (req.query.name as string)?.toLowerCase().trim();
 	const version = req.query.version as string;
 	const loader = req.query.loader as string;
 	if (!name) {
@@ -74,12 +102,18 @@ app.get('/api/mod/modrinth', async (req, res) => {
 			count++;
 
 			// Extract the mod title, link, and image
-			const title = $(element).find('.title > a').text().trim();
+			const title = $(element).find('.title > a').text().toLowerCase().trim();
 			const link = 'https://modrinth.com' + $(element).find('.title > a').attr('href');
 			const image = $(element).find('img').attr('src') || '';
 
 			// if name matches exactly, return the mod details
 			console.log('comparing', title, 'to', name);
+			if (title === name) {
+				bestMatch = { title, link, image, similarity: 1 };
+				found = true;
+				return;
+			}
+			// clean the mod name and the target name for better comparison
 			let cleanedModName = cleanModName(title);
 			let cleanedTarget = cleanModName(name);
 			console.log('After cleaning:', cleanedModName, 'vs', cleanedTarget);
@@ -87,7 +121,7 @@ app.get('/api/mod/modrinth', async (req, res) => {
 				bestMatch = { title, link, image, similarity: 1 };
 				found = true;
 				return;
-			} 
+			}
 			// calculate similarity between the mod title and the provided name using levenshtein distance (fuzzy matching)
 			let similarity = (1 - (levenshtein(cleanedTarget, cleanedModName) / Math.max(cleanedTarget.length, cleanedModName.length)));
 			// change similarity based on position (earlier is better)
