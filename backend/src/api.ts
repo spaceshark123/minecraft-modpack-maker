@@ -103,13 +103,13 @@ app.get('/api/mod/modrinth', async (req, res) => {
 			count++;
 
 			// Extract the mod title, link, and image
-			const title = $(element).find('.title > a').text().toLowerCase().trim();
+			const title = $(element).find('.title > a').text();
 			const link = 'https://modrinth.com' + $(element).find('.title > a').attr('href');
 			const image = $(element).find('img').attr('src') || '';
 
 			// if name matches exactly, return the mod details
-			console.log('comparing', title, 'to', name);
-			if (title === name) {
+			console.log('comparing', title.toLowerCase().trim(), 'to', name);
+			if (title.toLowerCase().trim() === name) {
 				bestMatch = { title, link, image, similarity: 1 };
 				found = true;
 				return;
