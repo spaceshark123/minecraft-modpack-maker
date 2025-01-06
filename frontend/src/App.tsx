@@ -23,9 +23,15 @@ function App() {
 	const constructModpack = async (e: React.FormEvent<HTMLFormElement>) => {
 		e.preventDefault();
 		// get from 3000. it should return text for now
-		const res = await fetch('/api');
-		const data = await res.text();
-		console.log(data);
+		let modsList = [];
+		for (const mod of mods) {
+			// for each mod, make a request to the backend to get the mod data
+			const url = `/api/mod/modrinth?name=${mod}&version=${selectedVersion}&loader=${selectedLoader}`;
+			const response = await fetch(url);
+			const data = await response.json();
+			modsList.push(data);
+		}
+		console.log(modsList);
 	}
 
 	return (
