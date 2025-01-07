@@ -26,7 +26,7 @@ import ModLoaderChooser from './ModLoaderChooser';
 import ModsInput from './ModsInput';
 import VersionChooser from './VersionChooser';
 import WebsiteSelector from './WebsiteSelector';
-import ModResultsDisplay from './ModResultsDisplay';
+import ModResultsDisplay, { Mod } from './ModResultsDisplay';
 import { Progress } from '@/components/ui/progress';
 
 function App() {
@@ -43,8 +43,31 @@ function App() {
 
 	const { toast } = useToast();
 
+	// remove duplicates from the mod list based on the mod name (if there are 2 mods with the same name but one has an error, keep the one without the error)
+	const uniqueMods = (modList: Mod[]): Mod[] => {
+		const modMap: Map<string, Mod> = new Map();
+
+		modList.forEach(mod => {
+			const modTitle = mod.title || '';
+			// If mod already exists and the current mod has an error, skip it
+			if (modMap.has(modTitle) && !mod.error) {
+				// Replace the mod with the one without the error
+				modMap.set(modTitle, mod);
+			} else if (!modMap.has(modTitle)) {
+				// If mod doesn't exist in the map, add it
+				modMap.set(modTitle, mod);
+			}
+		});
+
+		// Convert the map back to an array
+		return Array.from(modMap.values());
+	}
+
 	const constructModpack = async (e: React.FormEvent<HTMLFormElement>) => {
 		e.preventDefault();
+
+		// remove duplicate mods
+		setMods([...new Set(mods)]);
 
 		let valid = true;
 		if (mods.length === 0) {
@@ -103,7 +126,7 @@ function App() {
 					description: `${mod} not found`,
 					variant: 'destructive'
 				});
-				modsList.push({ name: mod, error: true });
+				modsList.push({ title: mod, error: true });
 			} else {
 				const data = await response.json();
 				modsList.push(data);
@@ -112,6 +135,8 @@ function App() {
 			// Update progress after each mod fetch
 			setProgress(((i + 1) / mods.length) * 100);
 		}
+		modsList = uniqueMods(modsList); // Remove duplicates
+
 		console.log(modsList);
 
 		setModResults(modsList);  // Store the fetched mod results

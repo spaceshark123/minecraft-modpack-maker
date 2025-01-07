@@ -8,12 +8,12 @@ import {
 } from "@/components/ui/table";
 import { AlertTriangle } from "lucide-react";
 
-interface Mod {
+export interface Mod {
 	error?: boolean;
-	name?: string;
 	image?: string;
 	title?: string;
 	link?: string;
+	similarity?: number;
 }
 
 interface ModResultsDisplayProps {
@@ -31,7 +31,7 @@ function ModResultsDisplay({ modResults }: ModResultsDisplayProps) {
 								<TableCell className="py-4 flex items-center text-red-600 space-x-2">
 									<AlertTriangle className="h-5 w-5 text-red-500" />
 									<span className="font-bold">
-										Mod "{mod.name}" not found.
+										Mod "{mod.title}" not found.
 									</span>
 								</TableCell>
 								<TableCell className="py-2">
