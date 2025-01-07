@@ -165,11 +165,15 @@ function App() {
 										{modResults.map((mod, index) => (
 											mod.error ? (
 												<TableRow key={index} className="border-none">
-													<TableCell className="py-4 flex items-center text-red-600 space-x-2" colSpan={2}>
+													<TableCell className="py-4 flex items-center text-red-600 space-x-2">
 														<AlertTriangle className="h-5 w-5 text-red-500" />
 														<span className="font-bold">
 															Mod "{mod.name}" not found.
 														</span>
+														{/* add a placeholder 3rd cell to keep the table structure */}
+													</TableCell>
+													<TableCell className="py-2">
+														<span></span> {/* Empty cell to keep the table structure */}
 													</TableCell>
 												</TableRow>
 											) : (
