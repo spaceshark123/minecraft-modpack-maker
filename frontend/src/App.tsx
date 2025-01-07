@@ -20,7 +20,16 @@ import {
 	AlertDialogTitle,
 	AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
-import { useToast } from "@/hooks/use-toast"
+import {
+	Table,
+	TableBody,
+	TableCell,
+	TableHead,
+	TableHeader,
+	TableRow,
+} from "@/components/ui/table";
+import { AlertTriangle } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 import ModLoaderChooser from './ModLoaderChooser';
 import ModsInput from './ModsInput';
 import VersionChooser from './VersionChooser';
@@ -151,53 +160,68 @@ function App() {
 						}
 						{modResults.length > 0 ?
 							<div className="mt-4">
-								<table className="min-w-full table-auto">
-									<thead>
-										<tr>
-											<th className="px-4 py-2">Mod Image</th>
-											<th className="px-4 py-2">Mod Name</th>
-											<th className="px-4 py-2">Mod Link</th>
-										</tr>
-									</thead>
-									<tbody>
+								<Table>
+									<TableBody>
 										{modResults.map((mod, index) => (
-											mod.error ?
-												<tr key={index}>
-													<td className="border px-4 py-2" colSpan={3}>
-														{mod.name} not found
-													</td>
-												</tr>
-												:
-											<tr key={index}>
-												<td className="border px-4 py-2">
-													<img src={mod.image} alt={mod.title} className="h-10 w-10 object-cover" />
-												</td>
-												<td className="border px-4 py-2">{mod.title}</td>
-												<td className="border px-4 py-2">
-													<a href={mod.link} target="_blank" rel="noopener noreferrer" className="text-blue-500">
-														Mod Page
-													</a>
-												</td>
-											</tr>
+											mod.error ? (
+												<TableRow key={index} className="border-none">
+													<TableCell className="py-4 flex items-center text-red-600 space-x-2" colSpan={2}>
+														<AlertTriangle className="h-5 w-5 text-red-500" />
+														<span className="font-bold">
+															Mod "{mod.name}" not found.
+														</span>
+													</TableCell>
+												</TableRow>
+											) : (
+												<TableRow key={index} className="border-none">
+													{/* Image + Name side by side */}
+													<TableCell className="py-2">
+														<div className="flex items-center space-x-4">
+															<img
+																src={mod.image}
+																alt={mod.title}
+																className="h-10 w-10 object-cover rounded"
+															/>
+															<span>{mod.title}</span>
+														</div>
+													</TableCell>
+													{/* Link to mod */}
+													<TableCell className="py-2">
+														<a
+															href={mod.link}
+															target="_blank"
+															rel="noopener noreferrer"
+															className="text-blue-500 underline"
+														>
+															Mod Page
+														</a>
+													</TableCell>
+												</TableRow>
+											)
 										))}
-									</tbody>
-								</table>
-								<AlertDialogCancel asChild>
-									<Button className="mt-4 mr-4" variant="destructive" onClick={() => {
-										setModResults([]);  // Clear mod results
-										setPanelOpen(false);  // Close the panel
-										console.log('Cancelled');
-									}}>
+									</TableBody>
+								</Table>
+
+								<div className="mt-4 flex justify-end space-x-4">
+									<Button
+										variant="destructive"
+										onClick={() => {
+											setModResults([]); // Clear mod results
+											setPanelOpen(false); // Close the panel
+											console.log("Cancelled");
+										}}
+									>
 										Nevermind, Go Back
 									</Button>
-								</AlertDialogCancel>
-								<AlertDialogAction asChild>
-									<Button className="mt-4" variant="secondary" onClick={() => {
-										console.log('Downloaded mods'); // placeholder
-									}}>
+									<Button
+										variant="secondary"
+										onClick={() => {
+											console.log("Downloaded mods"); // placeholder for actual download logic
+										}}
+									>
 										Confirm and Download Mods
 									</Button>
-								</AlertDialogAction>
+								</div>
 							</div>
 							: null}
 					</AlertDialogDescription>
