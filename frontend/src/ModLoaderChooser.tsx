@@ -8,6 +8,7 @@ import {
 	SelectTrigger,
 	SelectValue
 } from "@/components/ui/select"
+import { FabricIcon, ForgeIcon, NeoForgeIcon, QuiltIcon } from './ModLoaderIcons'
 
 interface ModLoaderChooserProps {
 	update: (value: string | null) => void;
@@ -22,10 +23,22 @@ function ModLoaderChooser({ update }: ModLoaderChooserProps) {
 					<SelectValue placeholder="Select" />
 				</SelectTrigger>
 				<SelectContent position="popper">
-					<SelectItem value="forge">Forge</SelectItem>
-					<SelectItem value="fabric">Fabric</SelectItem>
-					<SelectItem value="neoforge">NeoForge</SelectItem>
-					<SelectItem value="quilt">Quilt</SelectItem>
+					<SelectItem value="forge">
+						<ForgeIcon className="w-4 h-4 mr-2 inline" />
+						<span>Forge</span>
+					</SelectItem>
+					<SelectItem value="fabric" className="flex items-center">
+						<FabricIcon className="w-4 h-4 mr-2 inline" />
+						<span>Fabric</span>
+					</SelectItem>
+					<SelectItem value="neoforge">
+						<NeoForgeIcon className="w-4 h-4 mr-2 inline" />
+						<span>NeoForge</span>
+					</SelectItem>
+					<SelectItem value="quilt">
+						<QuiltIcon className="w-4 h-4 mr-2 inline" />
+						<span>Quilt</span>
+					</SelectItem>
 				</SelectContent>
 			</Select>
 		</div>

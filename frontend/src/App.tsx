@@ -28,7 +28,7 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
-import { AlertTriangle } from "lucide-react";
+import { Package, AlertTriangle, Ban, Check, List } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import ModLoaderChooser from './ModLoaderChooser';
 import ModsInput from './ModsInput';
@@ -52,6 +52,8 @@ function App() {
 
 	const constructModpack = async (e: React.FormEvent<HTMLFormElement>) => {
 		e.preventDefault();
+
+		let valid = true;
 		if (mods.length === 0) {
 			console.log('No mods provided');
 			toast({
@@ -59,7 +61,7 @@ function App() {
 				description: 'Please provide at least one mod name',
 				variant: 'destructive'
 			});
-			return;
+			valid = false;
 		}
 		if (!selectedLoader) {
 			console.log('No loader selected');
@@ -68,7 +70,7 @@ function App() {
 				description: 'Please select a mod loader',
 				variant: 'destructive'
 			});
-			return;
+			valid = false;
 		}
 		if (!selectedVersion) {
 			console.log('No version selected');
@@ -77,8 +79,9 @@ function App() {
 				description: 'Please select a Minecraft version',
 				variant: 'destructive'
 			});
-			return;
+			valid = false;
 		}
+		if (!valid) return;
 
 		setPanelOpen(true);  // Open the panel
 		setLoading(true);  // Set loading to true when starting requests
@@ -126,7 +129,10 @@ function App() {
 		<>
 			<Card className="pr-10 pl-10 min-w-[30vw]">
 				<CardHeader>
-					<CardTitle className="text-xl">Minecraft Modpack Maker</CardTitle>
+					<CardTitle className="text-xl">
+						<Package className="h-6 w-6 inline-block mr-2" />
+						Minecraft Modpack Maker
+					</CardTitle>
 					<CardDescription>Easily download a bunch of mods</CardDescription>
 				</CardHeader>
 				<CardContent>
@@ -149,7 +155,12 @@ function App() {
 			<AlertDialog open={panelOpen} onOpenChange={setPanelOpen}>
 				<AlertDialogContent>
 					<AlertDialogTitle>
-						{loading ? 'Fetching Mods...' : 'Mod Results'}
+						{loading ? 'Fetching Mods...' :
+							<div className="flex items-center">
+								<List className="h-6 w-6 inline mr-2" />
+								<span>Mod Results</span>
+							</div>
+						}
 					</AlertDialogTitle>
 					<AlertDialogDescription>
 						{loading ?
@@ -214,16 +225,20 @@ function App() {
 											setPanelOpen(false); // Close the panel
 											console.log("Cancelled");
 										}}
+										className="flex items-center"
 									>
-										Nevermind, Go Back
+										<Ban className="h-4 w-4 inline" />
+										<span>Nevermind, Go Back</span>
 									</Button>
 									<Button
 										variant="secondary"
 										onClick={() => {
 											console.log("Downloaded mods"); // placeholder for actual download logic
 										}}
+										className="flex items-center"
 									>
-										Confirm and Download Mods
+										<Check className="h-4 w-4 inline" />
+										<span>Confirm and Download Mods</span>
 									</Button>
 								</div>
 							</div>
