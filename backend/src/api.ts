@@ -4,7 +4,7 @@ import axios from 'axios';
 import * as cheerio from 'cheerio';
 import { distance as levenshtein } from 'fastest-levenshtein';
 import path from 'path';
-
+import puppeteer, { Browser } from 'puppeteer';
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -14,6 +14,18 @@ const loaders = ['fabric', 'forge', 'neoforge', 'quilt'];
 const loaderParenthesisRegex = new RegExp(`\\(.*?(${loaders.join('|')}).*?\\)|\\[.*?(${loaders.join('|')}).*?\\]`, 'gi');
 const loaderEndRegex = new RegExp(`\\s*(-|:)?\\s*(${loaders.join('|')})(/\\s*(${loaders.join('|')}))*\\s*$`, 'i');
 const specialWords = ['&', '|', 'and', 'or', '/', '-', ' '];
+
+const requestsToAbort = ['image', 'stylesheet', 'font'];
+let browser: Browser | null = null;
+
+// Initialize a single Puppeteer browser instance
+const initializeBrowser = async () => {
+	browser = await puppeteer.launch({
+		headless: true,
+		args: ['--no-sandbox', '--disable-setuid-sandbox'],
+		waitForInitialPage: false
+	});
+};
 
 const cleanModName = (modName: string): string => {
 	// normalize mod name (lowercase, trim, and remove extra spaces)
@@ -154,6 +166,61 @@ app.get('/api/mod/modrinth', async (req, res) => {
 	}
 });
 
+// API endpoint to download the latest version of a mod from Modrinth given the mod url, version, and loader
+app.get('/api/mod/modrinth/download', async (req, res) => {
+	const url = req.query.url as string;
+	const version = req.query.version as string;
+	const loader = req.query.loader as string;
+	if (!url) {
+		res.status(400).json({ error: 'Missing required parameter `url`.' });
+		return;
+	}
+	if (!version) {
+		res.status(400).json({ error: 'Missing required parameter `version`.' });
+		return;
+	}
+	if (!loader) {
+		res.status(400).json({ error: 'Missing required parameter `loader`.' });
+		return;
+	}
+	try {
+		const versionsUrl = `${url}/versions?g=${version}&l=${loader}`;
+
+		if (!browser) {
+			await initializeBrowser(); // Ensure browser is initialized
+		}
+		const page = await browser!.newPage();
+		await page.setRequestInterception(true);
+		page.on('request', (request) => {
+			if (requestsToAbort.includes(request.resourceType())) {
+				request.abort();
+			} else {
+				request.continue();
+			}
+		});
+		await page.goto(versionsUrl, { waitUntil: 'load' });
+
+		// Get the HTML content of the page
+		const html = await page.content();
+		await page.close();
+
+		const $ = cheerio.load(html);
+
+		console.log('Scraped mod page:', versionsUrl);
+
+		// Find the first download link
+		const downloadLink = $('.group-hover\\:\\!bg-brand').first().attr('href');
+
+		console.log('Download link:', downloadLink);
+
+		// Send the download link as a JSON response
+		res.json({ downloadLink });
+	} catch (error) {
+		console.error('Error occurred while downloading:', error);
+		res.status(500).json({ error: 'Failed to download mod.' });
+	}
+});
+
 app.get('/api/mod/curseforge', async (req, res) => {
 	// send error response saying curseforge is not supported as it disallows web scraping using cloudflare and captcha
 	res.status(501).json({ error: 'CurseForge is not supported, as it blocks web scraping using Cloudflare and CAPTCHA.' });
@@ -245,4 +312,12 @@ app.get('/api/mod/curseforge', async (req, res) => {
 
 app.listen(port, () => {
 	console.log('Server is running on http://localhost:' + port);
+});
+
+process.on('SIGINT', async () => {
+	console.log('Shutting down server...');
+	if (browser) {
+		await browser.close();
+	}
+	process.exit(0);
 });

@@ -17,7 +17,8 @@
     "cors": "^2.8.5",
     "express": "^4.21.2",
     "fastest-levenshtein": "^1.0.16",
-    "path": "^0.12.7"
+    "path": "^0.12.7",
+    "puppeteer": "^23.11.1"
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",
