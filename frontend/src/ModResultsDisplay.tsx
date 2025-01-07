@@ -6,7 +6,12 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
-import { AlertTriangle } from "lucide-react";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+} from "@/components/ui/tooltip"
+import { AlertTriangle, CircleAlert } from "lucide-react";
 
 export interface Mod {
 	error?: boolean;
@@ -21,7 +26,7 @@ interface ModResultsDisplayProps {
 }
 
 function ModResultsDisplay({ modResults }: ModResultsDisplayProps) {
-	return ( modResults.length > 0 ?
+	return (modResults.length > 0 ?
 		<div className="mt-4">
 			<Table>
 				<TableBody>
@@ -48,7 +53,22 @@ function ModResultsDisplay({ modResults }: ModResultsDisplayProps) {
 											alt={mod.title}
 											className="h-10 w-10 object-cover rounded"
 										/>
-										<span>{mod.title}</span>
+										<div className="flex items-center space-x-2">
+											{/* Mod title */}
+											<span>{mod.title}</span>
+
+											{/* Conditionally render yellow warning if similarity < 1 */}
+											{(mod.similarity || 0) < 1 && (
+												<Tooltip content="Not exact match">
+													<TooltipTrigger asChild>
+														<CircleAlert className="h-4 w-4 text-yellow-500 cursor-pointer" />
+													</TooltipTrigger>
+													<TooltipContent>
+														<span>Not exact match</span>
+													</TooltipContent>
+												</Tooltip>
+											)}
+										</div>
 									</div>
 								</TableCell>
 								{/* Link to mod */}
