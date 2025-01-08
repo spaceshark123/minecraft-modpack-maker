@@ -20,7 +20,7 @@ import {
 	AlertDialogTitle,
 	AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
-import { Package, Ban, Check, List } from "lucide-react";
+import { Package, Ban, Check, List, Download } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import ModLoaderChooser from './ModLoaderChooser';
 import ModsInput from './ModsInput';
@@ -28,6 +28,13 @@ import VersionChooser from './VersionChooser';
 import WebsiteSelector from './WebsiteSelector';
 import ModResultsDisplay, { Mod } from './ModResultsDisplay';
 import { Progress } from '@/components/ui/progress';
+import JSZip from "jszip";
+import { saveAs } from "file-saver";
+import Bluebird from "bluebird";
+
+function sleep(ms: number) {
+	return new Promise(resolve => setTimeout(resolve, ms));
+}
 
 function App() {
 	const [mods, setMods] = useState<string[]>([]);
@@ -37,11 +44,14 @@ function App() {
 
 	const [modResults, setModResults] = useState<any[]>([]);  // Store fetched mod data
 	const [loading, setLoading] = useState<boolean>(false);   // Track loading state
+	const [loadingTitle, setLoadingTitle] = useState<string>('');  // Loading title
 	const [progress, setProgress] = useState<number>(0);      // Progress state
 
 	const [panelOpen, setPanelOpen] = useState(false);
 
 	const { toast } = useToast();
+
+	const [zipBlobUrl, setZipBlobUrl] = useState<string | null>(null);
 
 	// remove duplicates from the mod list based on the mod name (if there are 2 mods with the same name but one has an error, keep the one without the error)
 	const uniqueMods = (modList: Mod[]): Mod[] => {
@@ -61,6 +71,12 @@ function App() {
 
 		// Convert the map back to an array
 		return Array.from(modMap.values());
+	}
+
+	const downloadModFile = async (url: string) => {
+		const response = await fetch(url);
+		const filename = url.split('/').pop(); // Extract default filename from the URL
+		return { blob: await response.blob(), filename };
 	}
 
 	const constructModpack = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -100,6 +116,7 @@ function App() {
 		if (!valid) return;
 
 		setPanelOpen(true);  // Open the panel
+		setLoadingTitle('Fetching Mods...');  // Set loading title
 		setLoading(true);  // Set loading to true when starting requests
 		setModResults([]);  // Reset mod results
 		setProgress(0);     // Reset progress
@@ -134,6 +151,8 @@ function App() {
 
 			// Update progress after each mod fetch
 			setProgress(((i + 1) / mods.length) * 100);
+			// sleep for a random time between 100 and 500 ms to avoid rate limiting
+			await sleep(Math.floor(Math.random() * 400) + 100);
 		}
 		modsList = uniqueMods(modsList); // Remove duplicates
 
@@ -141,6 +160,79 @@ function App() {
 
 		setModResults(modsList);  // Store the fetched mod results
 		setLoading(false);        // Stop loading after requests finish
+	};
+
+	const handleDownload = async () => {
+		let modDownloadUrls: string[] = [];
+
+		setPanelOpen(true);  // Open the panel if not already open
+		setLoadingTitle('Generating Download Links...');  // Set loading title
+		setLoading(true);  // Set loading to true when starting requests
+		setProgress(0);     // Reset progress
+
+		for (let i = 0; i < modResults.length; i++) {
+			const mod = modResults[i];
+			if (mod.error) continue; // Skip mods with errors
+			const reqUrl = `/api/mod/modrinth/download?url=${mod.link}&version=${selectedVersion}&loader=${selectedLoader}`;
+			const response = await fetch(reqUrl);
+			if (!response.ok) {
+				toast({
+					title: 'Error downloading mods',
+					description: 'Please try again later',
+					variant: 'destructive'
+				});
+				return;
+			}
+			const downloadUrl: string = await response.json().then(data => data.downloadLink);
+			modDownloadUrls.push(downloadUrl);
+
+			setProgress(((i + 1) / modResults.length) * 100);
+			// sleep for a random time between 100 and 500 ms to avoid rate limiting
+			await sleep(Math.floor(Math.random() * 400) + 100);
+		}
+
+		console.log(modDownloadUrls);
+
+		setProgress(0); // Reset progress for zipping
+		setLoadingTitle('Downloading Mods...'); // Set loading title
+
+		const zip = new JSZip();
+		let downloaded = 0;
+
+		await Bluebird.map(
+			modDownloadUrls,
+			async (url) => {
+				try {
+					const { blob, filename } = await downloadModFile(url);
+					zip.file(filename || `mod${downloaded}.jar`, blob);
+				} catch (error) {
+					console.error(`Error downloading ${url}:`, error);
+				} finally {
+					downloaded++;
+					setProgress((downloaded / modDownloadUrls.length) * 100);
+				}
+			},
+			{ concurrency: 5 }
+		);
+
+		setProgress(0); // Reset progress for zipping
+		setLoadingTitle('Zipping Mods...'); // Set loading title
+
+		const zipBlob = await zip.generateAsync({ type: "blob" }, (metadata) => {
+			setProgress(metadata.percent); // Update progress during zipping
+		});
+
+		setProgress(100); // Set progress to 100% after zipping
+		toast({
+			title: 'Download Complete',
+			description: 'Your mods have been successfully downloaded'
+		});
+
+		const blobUrl = URL.createObjectURL(zipBlob);
+		setZipBlobUrl(blobUrl); // Store the blob URL
+
+		setLoading(false); // Stop loading after zipping
+
 	};
 
 	return (
@@ -173,7 +265,11 @@ function App() {
 			<AlertDialog open={panelOpen} onOpenChange={setPanelOpen}>
 				<AlertDialogContent>
 					<AlertDialogTitle>
-						{loading ? 'Fetching Mods...' :
+						{loading ? loadingTitle : zipBlobUrl ?
+							<div className="flex items-center">
+								<Check className="h-6 w-6 inline mr-2" />
+								<span>Download Complete</span>
+							</div> :
 							<div className="flex items-center">
 								<List className="h-6 w-6 inline mr-2" />
 								<span>Mod Results</span>
@@ -187,7 +283,7 @@ function App() {
 								<p>{Math.round(progress)}% complete</p>
 							</div> : null
 						}
-						{modResults.length > 0 ?
+						{!loading && !zipBlobUrl && modResults.length > 0 ?
 							<div>
 								<ModResultsDisplay modResults={modResults} />
 								<div className="mt-4 flex justify-end space-x-4">
@@ -207,6 +303,7 @@ function App() {
 										variant="secondary"
 										onClick={() => {
 											console.log("Downloaded mods"); // placeholder for actual download logic
+											handleDownload();
 										}}
 										className="flex items-center"
 									>
@@ -214,6 +311,30 @@ function App() {
 										<span>Confirm and Download Mods</span>
 									</Button>
 								</div>
+							</div>
+							: null}
+						{zipBlobUrl ?
+							<div className="mt-4 flex justify-end space-x-4">
+								<Button
+									variant="secondary"
+									onClick={() => {
+										setZipBlobUrl(null); // Clear the blob URL
+										setPanelOpen(false); // Close the panel
+									}}
+									className="flex items-center"
+								>
+									<Ban className="h-4 w-4 inline" />
+									<span>Close</span>
+								</Button>
+								<Button
+									onClick={() => {
+										saveAs(zipBlobUrl, "mods.zip"); // Trigger the download
+									}}
+									className="flex items-center"
+								>
+									<Download className="h-4 w-4 inline" />
+									<span>Download Modpack</span>
+								</Button>
 							</div>
 							: null}
 					</AlertDialogDescription>

@@ -29,8 +29,7 @@ async function startBrowser() {
 		console.log('Launching a new browser instance...');
 		browser = await puppeteer.launch({
 			headless: true,
-			args: ['--no-sandbox', '--disable-setuid-sandbox'],
-			waitForInitialPage: false
+			args: ['--no-sandbox', '--disable-setuid-sandbox']
 		});
 		browserStartTime = Date.now();
 	}
