@@ -17,15 +17,25 @@ const specialWords = ['&', '|', 'and', 'or', '/', '-', ' '];
 
 const requestsToAbort = ['image', 'stylesheet', 'font'];
 let browser: Browser | null = null;
+let browserStartTime = Date.now();
 
 // Initialize a single Puppeteer browser instance
-const initializeBrowser = async () => {
-	browser = await puppeteer.launch({
-		headless: true,
-		args: ['--no-sandbox', '--disable-setuid-sandbox'],
-		waitForInitialPage: false
-	});
-};
+async function startBrowser() {
+	if (!browser || !browser.connected || (Date.now() - browserStartTime) > 3600000) { // Restart every hour
+		if (browser) {
+			console.log('Closing old browser instance...');
+			await browser.close();
+		}
+		console.log('Launching a new browser instance...');
+		browser = await puppeteer.launch({
+			headless: true,
+			args: ['--no-sandbox', '--disable-setuid-sandbox'],
+			waitForInitialPage: false
+		});
+		browserStartTime = Date.now();
+	}
+	return browser;
+}
 
 const cleanModName = (modName: string): string => {
 	// normalize mod name (lowercase, trim, and remove extra spaces)
@@ -186,9 +196,7 @@ app.get('/api/mod/modrinth/download', async (req, res) => {
 	try {
 		const versionsUrl = `${url}/versions?g=${version}&l=${loader}`;
 
-		if (!browser) {
-			await initializeBrowser(); // Ensure browser is initialized
-		}
+		const browser = await startBrowser();
 		const page = await browser!.newPage();
 		await page.setRequestInterception(true);
 		page.on('request', (request) => {
