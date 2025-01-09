@@ -4,11 +4,12 @@ import axios from 'axios';
 import * as cheerio from 'cheerio';
 import { distance as levenshtein } from 'fastest-levenshtein';
 import path from 'path';
-import puppeteer from 'puppeteer-extra';
-import StealthPlugin from 'puppeteer-extra-plugin-stealth';
+// import puppeteer from 'puppeteer-extra';
+// import StealthPlugin from 'puppeteer-extra-plugin-stealth';
+import { connect } from 'puppeteer-real-browser'
 import { Browser } from 'puppeteer';
 
-puppeteer.use(StealthPlugin());
+//puppeteer.use(StealthPlugin());
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -19,22 +20,47 @@ const loaderParenthesisRegex = new RegExp(`\\(.*?(${loaders.join('|')}).*?\\)|\\
 const loaderEndRegex = new RegExp(`\\s*(-|:)?\\s*(${loaders.join('|')})(/\\s*(${loaders.join('|')}))*\\s*$`, 'i');
 const specialWords = ['&', '|', 'and', 'or', '/', '-', ' '];
 
-const requestsToAbort = ['image', 'stylesheet', 'font'];
-let browser: Browser | null = null;
+const requestsToAbort = ['image', 'stylesheet', 'font', 'media', 'texttrack', 'eventsource', 'websocket', 'manifest', 'other'];
+const requestUrlToAbort = ['polling', 'analytics', 'beacon', 'ping', 'ws'];
+import { ConnectResult } from 'puppeteer-real-browser';
+
+let browser: ConnectResult | null = null;
 let browserStartTime = Date.now();
 
 // Initialize a single Puppeteer browser instance
 async function startBrowser() {
-	if (!browser || !browser.connected || (Date.now() - browserStartTime) > 3600000) { // Restart every hour
+	if (!browser || !browser.browser || !browser.browser.connected || (Date.now() - browserStartTime) > 3600000) { // Restart every hour
 		if (browser) {
 			console.log('Closing old browser instance...');
-			await browser.close();
+			await browser.browser.close();
 		}
 		console.log('Launching a new browser instance...');
-		browser = await puppeteer.launch({
-			headless: true,
-			args: ['--no-sandbox', '--disable-setuid-sandbox']
-		});
+		// browser = await puppeteer.launch({
+		// 	headless: true,
+		// 	args: ['--no-sandbox', '--disable-setuid-sandbox']
+		// });
+		browser = await connect({
+
+			headless: false,
+
+			args: [],
+
+			customConfig: {},
+
+			turnstile: true,
+
+			connectOption: {},
+
+			disableXvfb: false,
+			ignoreAllFlags: false
+			// proxy:{
+			//     host:'<proxy-host>',
+			//     port:'<proxy-port>',
+			//     username:'<proxy-username>',
+			//     password:'<proxy-password>'
+			// }
+
+		})
 		browserStartTime = Date.now();
 	}
 	return browser;
@@ -201,44 +227,56 @@ app.get('/api/mod/modrinth/download', async (req, res) => {
 		const versionsUrl = `${decodeURIComponent(url)}/versions?g=${version}&l=${loader}`;
 
 		const browser = await startBrowser();
-		const page = await browser!.newPage();
+		const page = await browser.browser.newPage();
 		page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36');
 		page.setViewport({ width: 1920, height: 1080 });
 		await page.setRequestInterception(true);
 		page.on('request', (request) => {
-			if (requestsToAbort.includes(request.resourceType())) {
+			const url = request.url();
+			if (requestsToAbort.includes(request.resourceType()) || requestUrlToAbort.some((urlToAbort) => url.includes(urlToAbort))) {
 				request.abort();
 			} else {
 				request.continue();
 			}
 		});
-		await page.goto(versionsUrl, { waitUntil: 'networkidle2' });
+
+		console.log('Scraped mod page:', versionsUrl);
+
+		const success = await page.goto(versionsUrl, { waitUntil: 'networkidle2', timeout: 60000 }).catch(async (error) => {
+			// if timeout error, return a 504 error
+			await page.screenshot({ path: `tmp/${url.replace(/[^a-z0-9]/gi, '_')}.png` });
+			if (error.name === 'TimeoutError') {
+				console.error('Request timed out.');
+				res.status(504).json({ error: 'Request timed out.' });
+				return;
+			}
+		});
+		if (!success) return;
 
 		await page.screenshot({ path: `tmp/${url.replace(/[^a-z0-9]/gi, '_')}.png` });
 
 		// Get the HTML content of the page
 		const html = await page.content();
-		await page.close();
-
-		// if cloudflare captcha is detected, return a 403 error
-		if (html.includes('cloudflare') || html.includes('captcha')) {
-			console.error('Cloudflare captcha detected.');
-			res.status(403).json({ error: 'Cloudflare captcha detected.' });
-			return;
-		}
 
 		const $ = cheerio.load(html);
-
-		console.log('Scraped mod page:', versionsUrl);
 
 		// Find the first download link
 		const downloadLink = $('.group-hover\\:\\!bg-brand').first().attr('href');
 
 		if (!downloadLink) {
+			// if cloudflare captcha is detected, return a 403 error (absence of 'Downloads' in the HTML)
+			if (!html.includes('Downloads')) {
+				console.error('Cloudflare captcha detected.');
+				res.status(403).json({ error: 'Cloudflare captcha detected.' });
+				return;
+			}
+
 			console.error('Download link not found.');
 			res.status(404).json({ error: 'Download link not found.' });
 			return;
 		}
+
+		await page.close();
 
 		console.log('Download link:', downloadLink);
 
@@ -346,7 +384,7 @@ app.listen(port, () => {
 process.on('SIGINT', async () => {
 	console.log('Shutting down server...');
 	if (browser) {
-		await browser.close();
+		await browser.browser.close();
 	}
 	process.exit(0);
 });

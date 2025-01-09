@@ -181,11 +181,31 @@ function App() {
 				}
 			});
 			if (!response.ok) {
-				toast({
-					title: 'Error downloading mods',
-					description: 'Please try again later',
-					variant: 'destructive'
-				});
+				if (response.status === 429) {
+					toast({
+						title: 'Too many requests',
+						description: 'Please try again later',
+						variant: 'destructive'
+					});
+				} else if (response.status === 403) {
+					toast({
+						title: 'Forbidden',
+						description: 'Please try again later',
+						variant: 'destructive'
+					});
+				} else if (response.status === 504) { 
+					toast({
+						title: 'Gateway Timeout',
+						description: 'Please try again later',
+						variant: 'destructive'
+					});
+				} else {
+					toast({
+						title: 'Error downloading mods',
+						description: 'Please try again later',
+						variant: 'destructive'
+					});
+				}
 				setLoading(false); // Stop loading if there is an error
 				return;
 			}
