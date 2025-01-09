@@ -4,7 +4,11 @@ import axios from 'axios';
 import * as cheerio from 'cheerio';
 import { distance as levenshtein } from 'fastest-levenshtein';
 import path from 'path';
-import puppeteer, { Browser } from 'puppeteer';
+import puppeteer from 'puppeteer-extra';
+import StealthPlugin from 'puppeteer-extra-plugin-stealth';
+import { Browser } from 'puppeteer';
+
+puppeteer.use(StealthPlugin());
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -110,6 +114,7 @@ app.get('/api/mod/modrinth', async (req, res) => {
 		}).catch((error) => {
 			// if 429 error, return a 429 error
 			if (error.response.status === 429) {
+				console.error('Too many requests. Please try again later.');
 				res.status(429).json({ error: 'Too many requests. Please try again later.' });
 				return;
 			}
@@ -193,10 +198,12 @@ app.get('/api/mod/modrinth/download', async (req, res) => {
 		return;
 	}
 	try {
-		const versionsUrl = `${url}/versions?g=${version}&l=${loader}`;
+		const versionsUrl = `${decodeURIComponent(url)}/versions?g=${version}&l=${loader}`;
 
 		const browser = await startBrowser();
 		const page = await browser!.newPage();
+		page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36');
+		page.setViewport({ width: 1920, height: 1080 });
 		await page.setRequestInterception(true);
 		page.on('request', (request) => {
 			if (requestsToAbort.includes(request.resourceType())) {
@@ -205,11 +212,20 @@ app.get('/api/mod/modrinth/download', async (req, res) => {
 				request.continue();
 			}
 		});
-		await page.goto(versionsUrl, { waitUntil: 'load' });
+		await page.goto(versionsUrl, { waitUntil: 'networkidle2' });
+
+		await page.screenshot({ path: `tmp/${url.replace(/[^a-z0-9]/gi, '_')}.png` });
 
 		// Get the HTML content of the page
 		const html = await page.content();
 		await page.close();
+
+		// if cloudflare captcha is detected, return a 403 error
+		if (html.includes('cloudflare') || html.includes('captcha')) {
+			console.error('Cloudflare captcha detected.');
+			res.status(403).json({ error: 'Cloudflare captcha detected.' });
+			return;
+		}
 
 		const $ = cheerio.load(html);
 
@@ -217,6 +233,12 @@ app.get('/api/mod/modrinth/download', async (req, res) => {
 
 		// Find the first download link
 		const downloadLink = $('.group-hover\\:\\!bg-brand').first().attr('href');
+
+		if (!downloadLink) {
+			console.error('Download link not found.');
+			res.status(404).json({ error: 'Download link not found.' });
+			return;
+		}
 
 		console.log('Download link:', downloadLink);
 

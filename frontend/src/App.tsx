@@ -11,14 +11,9 @@ import {
 } from "@/components/ui/card";
 import {
 	AlertDialog,
-	AlertDialogAction,
-	AlertDialogCancel,
 	AlertDialogContent,
 	AlertDialogDescription,
-	AlertDialogFooter,
-	AlertDialogHeader,
 	AlertDialogTitle,
-	AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { Package, Ban, Check, List, Download } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -151,8 +146,8 @@ function App() {
 
 			// Update progress after each mod fetch
 			setProgress(((i + 1) / mods.length) * 100);
-			// sleep for a random time between 100 and 500 ms to avoid rate limiting
-			await sleep(Math.floor(Math.random() * 400) + 100);
+			// sleep for a random time between 300 and 500 ms to avoid rate limiting
+			await sleep(Math.floor(Math.random() * 200) + 300);
 		}
 		modsList = uniqueMods(modsList); // Remove duplicates
 
@@ -173,22 +168,33 @@ function App() {
 		for (let i = 0; i < modResults.length; i++) {
 			const mod = modResults[i];
 			if (mod.error) continue; // Skip mods with errors
-			const reqUrl = `/api/mod/modrinth/download?url=${mod.link}&version=${selectedVersion}&loader=${selectedLoader}`;
-			const response = await fetch(reqUrl);
+			const params = new URLSearchParams({
+				url: mod.link,
+				version: selectedVersion!,
+				loader: selectedLoader!
+			});
+
+			const response = await fetch(`/api/mod/modrinth/download?${params}`, {
+				method: 'GET',
+				headers: {
+					'Content-Type': 'application/json'
+				}
+			});
 			if (!response.ok) {
 				toast({
 					title: 'Error downloading mods',
 					description: 'Please try again later',
 					variant: 'destructive'
 				});
+				setLoading(false); // Stop loading if there is an error
 				return;
 			}
 			const downloadUrl: string = await response.json().then(data => data.downloadLink);
 			modDownloadUrls.push(downloadUrl);
 
 			setProgress(((i + 1) / modResults.length) * 100);
-			// sleep for a random time between 100 and 500 ms to avoid rate limiting
-			await sleep(Math.floor(Math.random() * 400) + 100);
+			// sleep for a random time between 300 and 500 ms to avoid rate limiting
+			await sleep(Math.floor(Math.random() * 200) + 300);
 		}
 
 		console.log(modDownloadUrls);
@@ -207,6 +213,13 @@ function App() {
 					zip.file(filename || `mod${downloaded}.jar`, blob);
 				} catch (error) {
 					console.error(`Error downloading ${url}:`, error);
+					toast({
+						title: 'Error downloading mods',
+						description: 'Please try again later',
+						variant: 'destructive'
+					});
+					setLoading(false); // Stop loading if there is an error
+					return;
 				} finally {
 					downloaded++;
 					setProgress((downloaded / modDownloadUrls.length) * 100);
@@ -220,7 +233,25 @@ function App() {
 
 		const zipBlob = await zip.generateAsync({ type: "blob" }, (metadata) => {
 			setProgress(metadata.percent); // Update progress during zipping
+		}).catch((error) => {
+			console.error('Error zipping mods:', error);
+			toast({
+				title: 'Error zipping mods',
+				description: 'Please try again later',
+				variant: 'destructive'
+			});
+			setLoading(false); // Stop loading if there is an error
+			return;
 		});
+		if (!zipBlob) {
+			toast({
+				title: 'Error zipping mods',
+				description: 'Please try again later',
+				variant: 'destructive'
+			});
+			setLoading(false); // Stop loading if there is an error
+			return;
+		}
 
 		setProgress(100); // Set progress to 100% after zipping
 		toast({
@@ -228,11 +259,10 @@ function App() {
 			description: 'Your mods have been successfully downloaded'
 		});
 
-		const blobUrl = URL.createObjectURL(zipBlob);
+		const blobUrl = URL.createObjectURL(zipBlob!);
 		setZipBlobUrl(blobUrl); // Store the blob URL
 
 		setLoading(false); // Stop loading after zipping
-
 	};
 
 	return (
