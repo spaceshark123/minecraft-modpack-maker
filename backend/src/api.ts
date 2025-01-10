@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import axios from 'axios';
 import * as cheerio from 'cheerio';
@@ -21,11 +21,54 @@ const loaderEndRegex = new RegExp(`\\s*(-|:)?\\s*(${loaders.join('|')})(/\\s*(${
 const specialWords = ['&', '|', 'and', 'or', '/', '-', ' '];
 
 const requestsToAbort = ['image', 'stylesheet', 'font', 'media', 'texttrack', 'eventsource', 'websocket', 'manifest', 'other'];
-const requestUrlToAbort = ['polling', 'analytics', 'beacon', 'ping', 'ws'];
+const requestUrlToAbort = ['polling', 'analytics', 'beacon', 'ping', 'ws', 'cloudflare', 'flare', 'cloudfront', 'geoip', 'prebid', 'challenge', 'turnstile', 'captcha', 'tracking', 'telemetry'];
 import { ConnectResult } from 'puppeteer-real-browser';
 
 let browser: ConnectResult | null = null;
 let browserStartTime = Date.now();
+
+// Queue to hold pending requests
+let requestQueue: (() => void)[] = [];
+let lastRequestTime: number = 0;
+
+// Middleware for rate throttling
+const rateLimiter = (req: Request, res: Response, next: NextFunction) => {
+  const now = Date.now();
+  const timeSinceLastRequest = now - lastRequestTime;
+  const delay = Math.max(2000 - timeSinceLastRequest, 0); // 2000 ms = 2 seconds
+
+  // Function to process the request after the delay
+  const processRequest = () => {
+    lastRequestTime = Date.now();
+    next();
+  };
+
+  // If delay is 0 (no need to wait), process the request immediately
+  if (delay === 0) {
+    processRequest();
+  } else {
+    // Otherwise, push the request into the queue and delay its processing
+    requestQueue.push(() => {
+      setTimeout(() => {
+        processRequest();
+        // After processing the request, process the next one in the queue (if any)
+        if (requestQueue.length > 0) {
+          const nextInQueue = requestQueue.shift();
+          if (nextInQueue) nextInQueue();
+        }
+      }, delay);
+    });
+
+    // If it's the first item in the queue, process it
+    if (requestQueue.length === 1) {
+      const firstInQueue = requestQueue.shift();
+      if (firstInQueue) firstInQueue();
+    }
+  }
+};
+
+// Apply the rateLimiter middleware to all routes
+app.use(rateLimiter);
 
 // Initialize a single Puppeteer browser instance
 async function startBrowser() {
@@ -225,6 +268,23 @@ app.get('/api/mod/modrinth/download', async (req, res) => {
 	}
 	try {
 		const versionsUrl = `${decodeURIComponent(url)}/versions?g=${version}&l=${loader}`;
+
+		// const response = await axios.get(versionsUrl).catch((error) => {
+		// 	// if 429 error, return a 429 error
+		// 	if (error.response.status === 429) {
+		// 		console.error('Too many requests. Please try again later.');
+		// 		res.status(429).json({ error: 'Too many requests. Please try again later.' });
+		// 		return;
+		// 	}
+		// });
+		// if (!response) return;
+
+		// const $ = cheerio.load(response.data);
+
+		// $('div.versions-grid-row.group').each((index, element) => {
+		// 	// find the first one that has a nested child with the version number as inner text and another nested child with the loader name as inner text
+		// 	const versionElement = $(element).find('div.versions-grid-item').first();
+		// }
 
 		const browser = await startBrowser();
 		const page = await browser.browser.newPage();

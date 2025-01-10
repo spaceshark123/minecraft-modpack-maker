@@ -77,11 +77,14 @@ function App() {
 	const constructModpack = async (e: React.FormEvent<HTMLFormElement>) => {
 		e.preventDefault();
 
+		let workingMods = mods;
+
 		// remove duplicate mods
-		setMods([...new Set(mods)]);
+		workingMods = [...new Set(workingMods)];
+		console.log("removed duplicates", workingMods);
 
 		let valid = true;
-		if (mods.length === 0) {
+		if (workingMods.length === 0) {
 			console.log('No mods provided');
 			toast({
 				title: 'No mods provided',
@@ -117,8 +120,8 @@ function App() {
 		setProgress(0);     // Reset progress
 
 		let modsList = [];
-		for (let i = 0; i < mods.length; i++) {
-			const mod = mods[i];
+		for (let i = 0; i < workingMods.length; i++) {
+			const mod = workingMods[i];
 
 			// For each mod, make a request to the backend to get the mod data
 			const url = `/api/mod/modrinth?name=${mod}&version=${selectedVersion}&loader=${selectedLoader}`;
@@ -145,7 +148,7 @@ function App() {
 			}
 
 			// Update progress after each mod fetch
-			setProgress(((i + 1) / mods.length) * 100);
+			setProgress(((i + 1) / workingMods.length) * 100);
 			// sleep for a random time between 300 and 500 ms to avoid rate limiting
 			await sleep(Math.floor(Math.random() * 200) + 300);
 		}
@@ -213,8 +216,8 @@ function App() {
 			modDownloadUrls.push(downloadUrl);
 
 			setProgress(((i + 1) / modResults.length) * 100);
-			// sleep for a random time between 300 and 500 ms to avoid rate limiting
-			await sleep(Math.floor(Math.random() * 200) + 300);
+			// sleep for a random time between 500 and 1000 ms to avoid rate limiting
+			await sleep(Math.floor(Math.random() * 500) + 500);
 		}
 
 		console.log(modDownloadUrls);
