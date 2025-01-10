@@ -3,6 +3,7 @@ import cors from 'cors';
 import axios from 'axios';
 import { distance as levenshtein } from 'fastest-levenshtein';
 import path from 'path';
+import rateLimiter from './ratelimiter';
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -80,6 +81,7 @@ const cleanModName = (modName: string): string => {
 };
 
 app.use(cors());
+app.use(rateLimiter(200)); // rate limit to at most 1 request every 200ms
 
 // serve the frontend
 app.use(express.static(path.join(__dirname, '..', '..', 'frontend', 'dist')));
