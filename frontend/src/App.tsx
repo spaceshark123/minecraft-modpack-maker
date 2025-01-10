@@ -70,8 +70,11 @@ function App() {
 
 	const downloadModFile = async (url: string) => {
 		const response = await fetch(url);
-		const filename = url.split('/').pop(); // Extract default filename from the URL
-		return { blob: await response.blob(), filename };
+		if (!response.ok) {
+			throw new Error(`Failed to download mod from ${url}`);
+		}
+		const blob = await response.blob();
+		return blob;
 	}
 
 	const constructModpack = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -149,8 +152,8 @@ function App() {
 
 			// Update progress after each mod fetch
 			setProgress(((i + 1) / workingMods.length) * 100);
-			// sleep for a random time between 300 and 500 ms to avoid rate limiting
-			await sleep(Math.floor(Math.random() * 200) + 300);
+			// sleep for a random time above 200s to avoid rate limiting of 300 requests per minute
+			await sleep(Math.floor(Math.random() * 200) + 200);
 		}
 		modsList = uniqueMods(modsList); // Remove duplicates
 
@@ -162,6 +165,7 @@ function App() {
 
 	const handleDownload = async () => {
 		let modDownloadUrls: string[] = [];
+		let modFilenames: string[] = [];
 
 		setPanelOpen(true);  // Open the panel if not already open
 		setLoadingTitle('Generating Download Links...');  // Set loading title
@@ -172,17 +176,12 @@ function App() {
 			const mod = modResults[i];
 			if (mod.error) continue; // Skip mods with errors
 			const params = new URLSearchParams({
-				url: mod.link,
+				slug: mod.slug,
 				version: selectedVersion!,
 				loader: selectedLoader!
 			});
 
-			const response = await fetch(`/api/mod/modrinth/download?${params}`, {
-				method: 'GET',
-				headers: {
-					'Content-Type': 'application/json'
-				}
-			});
+			const response = await fetch(`/api/mod/modrinth/download?${params}`);
 			if (!response.ok) {
 				if (response.status === 429) {
 					toast({
@@ -212,15 +211,17 @@ function App() {
 				setLoading(false); // Stop loading if there is an error
 				return;
 			}
-			const downloadUrl: string = await response.json().then(data => data.downloadLink);
-			modDownloadUrls.push(downloadUrl);
+			const modResponse: { url: string, filename: string } = await response.json();
+			modDownloadUrls.push(modResponse.url);
+			modFilenames.push(modResponse.filename);
 
 			setProgress(((i + 1) / modResults.length) * 100);
-			// sleep for a random time between 500 and 1000 ms to avoid rate limiting
-			await sleep(Math.floor(Math.random() * 500) + 500);
+			// sleep for a random time above 200s to avoid rate limiting of 300 requests per minute
+			await sleep(Math.floor(Math.random() * 200) + 200);
 		}
 
 		console.log(modDownloadUrls);
+		console.log(modFilenames);
 
 		setProgress(0); // Reset progress for zipping
 		setLoadingTitle('Downloading Mods...'); // Set loading title
@@ -230,10 +231,10 @@ function App() {
 
 		await Bluebird.map(
 			modDownloadUrls,
-			async (url) => {
+			async (url, index) => {
 				try {
-					const { blob, filename } = await downloadModFile(url);
-					zip.file(filename || `mod${downloaded}.jar`, blob);
+					const blob = await downloadModFile(url);
+					zip.file(modFilenames[index], blob);
 				} catch (error) {
 					console.error(`Error downloading ${url}:`, error);
 					toast({

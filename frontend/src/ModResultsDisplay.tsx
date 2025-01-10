@@ -17,7 +17,7 @@ export interface Mod {
 	error?: boolean;
 	image?: string;
 	title?: string;
-	link?: string;
+	slug?: string;
 	similarity?: number;
 }
 
@@ -74,7 +74,7 @@ function ModResultsDisplay({ modResults }: ModResultsDisplayProps) {
 								{/* Link to mod */}
 								<TableCell className="py-2">
 									<a
-										href={mod.link}
+										href={`https://modrinth.com/mod/${mod.slug}`}
 										target="_blank"
 										rel="noopener noreferrer"
 										className="text-blue-500 underline"
