@@ -8,6 +8,9 @@ import rateLimiter from './ratelimiter';
 const app = express();
 const port = process.env.PORT || 3000;
 
+// use unique user agent to avoid being blocked
+const userAgent = 'spaceshark123/minecraft-modpack-maker/1.0.0 (nyancot121@gmail.com)';
+
 const loaders = ['fabric', 'forge', 'neoforge', 'quilt'];
 // const curseforgeLoaderIDs = [4, 1, 6, 5]; // mapping of loader names to CurseForge loader IDs
 const loaderParenthesisRegex = new RegExp(`\\(.*?(${loaders.join('|')}).*?\\)|\\[.*?(${loaders.join('|')}).*?\\]`, 'gi');
@@ -115,6 +118,9 @@ app.get('/api/mod/modrinth', async (req, res) => {
 	try {
 		// Make an HTTP GET request to the Modrinth search API with the provided name as a query parameter (query)
 		const response = await axios.get<ModrinthSearchResponse>('https://api.modrinth.com/v2/search', {
+			headers: {
+				'User-Agent': userAgent
+			},
 			params: {
 				query: name,
 				facets: `[["categories:${loader}"],["versions:${version}"],["project_type:mod"]]`
@@ -207,6 +213,9 @@ app.get('/api/mod/modrinth/download', async (req, res) => {
 	try {
 		// Make an HTTP GET request to the Modrinth API to get the versions of the mod
 		const response = await axios.get<ModrinthVersionsResponse[]>(`https://api.modrinth.com/v2/project/${slug}/version`, {
+			headers: {
+				'User-Agent': userAgent
+			},
 			params: {
 				loaders: `["${loader}"]`,
 				game_versions: `[${version}]`
