@@ -372,8 +372,8 @@ function App() {
 								<Button
 									variant="secondary"
 									onClick={() => {
-										setZipBlobUrl(null); // Clear the blob URL
 										setPanelOpen(false); // Close the panel
+										setZipBlobUrl(null); // Clear the blob URL
 									}}
 									className="flex items-center"
 								>
