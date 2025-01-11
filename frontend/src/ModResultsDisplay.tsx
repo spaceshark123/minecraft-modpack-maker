@@ -27,7 +27,7 @@ interface ModResultsDisplayProps {
 
 function ModResultsDisplay({ modResults }: ModResultsDisplayProps) {
 	return (modResults.length > 0 ?
-		<div className="mt-4">
+		<div className="mt-4 max-h-[70vh] overflow-y-auto w-fit-content overflow-x-hidden">
 			<Table>
 				<TableBody>
 					{modResults.map((mod, index) => (
@@ -59,7 +59,7 @@ function ModResultsDisplay({ modResults }: ModResultsDisplayProps) {
 
 											{/* Conditionally render yellow warning if similarity < 1 */}
 											{(mod.similarity || 0) < 1 && (
-												<Tooltip content="Not exact match">
+												<Tooltip>
 													<TooltipTrigger asChild>
 														<CircleAlert className="h-4 w-4 text-yellow-500 cursor-pointer" />
 													</TooltipTrigger>

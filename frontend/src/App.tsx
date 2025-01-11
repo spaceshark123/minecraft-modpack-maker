@@ -317,7 +317,7 @@ function App() {
 				</CardFooter>
 			</Card>
 			<AlertDialog open={panelOpen} onOpenChange={setPanelOpen}>
-				<AlertDialogContent>
+				<AlertDialogContent className="overflow-hidden">
 					<AlertDialogTitle>
 						{loading ? loadingTitle : zipBlobUrl ?
 							<div className="flex items-center">
