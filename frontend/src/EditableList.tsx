@@ -30,10 +30,9 @@ function EditableList ({ placeholder, id, update}: EditableListProps) {
 		<div className="space-y-4">
 			{/* Input area for pasting text */}
 			<Textarea id={id}
-				//className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
 				rows={5}
 				placeholder={placeholder || "Paste your list here..."}
-				className="max-h-64 h-[50vh] scrollbar-thin scrollbar-thumb-rounded scrollbar-thumb-gray-400 scrollbar-track-gray-100"
+				className="h-64 max-h-[35vh] w-full"
 				onPaste={handlePaste}
 				onInput={(event) => {
 					// Split the input by newlines and remove empty strings

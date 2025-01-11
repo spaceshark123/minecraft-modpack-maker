@@ -291,7 +291,7 @@ function App() {
 
 	return (
 		<>
-			<Card className="pr-10 pl-10 min-w-[30vw]">
+			<Card className="pr-10 pl-10 min-w-[30vw] w-1/3 max-w-[90vw] overflow-x-hidden overflow-y-auto">
 				<CardHeader>
 					<CardTitle className="text-xl">
 						<Package className="h-6 w-6 inline-block mr-2" />
