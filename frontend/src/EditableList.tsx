@@ -32,7 +32,7 @@ function EditableList ({ placeholder, id, update}: EditableListProps) {
 			<Textarea id={id}
 				rows={5}
 				placeholder={placeholder || "Paste your list here..."}
-				className="h-64 max-h-[35vh] w-full"
+				className="h-64 max-h-[27vh] w-full"
 				onPaste={handlePaste}
 				onInput={(event) => {
 					// Split the input by newlines and remove empty strings

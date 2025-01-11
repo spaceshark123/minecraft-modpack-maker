@@ -27,12 +27,12 @@ interface ModResultsDisplayProps {
 
 function ModResultsDisplay({ modResults }: ModResultsDisplayProps) {
 	return (modResults.length > 0 ?
-		<div className="mt-4 max-h-[70vh] overflow-y-auto w-fit-content overflow-x-hidden">
+		<div className="mt-4 max-h-[70vh] overflow-y-auto max-w-[70vw] overflow-x-hidden">
 			<Table>
 				<TableBody>
 					{modResults.map((mod, index) => (
 						mod.error ? (
-							<TableRow key={index} className="border-none">
+							<TableRow key={index} className="border-none max-w-[70vw]">
 								<TableCell className="py-4 flex items-center text-red-600 space-x-2">
 									<AlertTriangle className="h-5 w-5 text-red-500" />
 									<span className="font-bold">
@@ -44,7 +44,7 @@ function ModResultsDisplay({ modResults }: ModResultsDisplayProps) {
 								</TableCell>
 							</TableRow>
 						) : (
-							<TableRow key={index} className="border-none">
+							<TableRow key={index} className="border-none max-w-[70vw]">
 								{/* Image + Name side by side */}
 								<TableCell className="py-2">
 									<div className="flex items-center space-x-4">

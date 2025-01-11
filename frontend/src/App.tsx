@@ -291,7 +291,7 @@ function App() {
 
 	return (
 		<>
-			<Card className="pr-10 pl-10 min-w-[30vw] w-1/3 max-w-[90vw] overflow-x-hidden overflow-y-auto">
+			<Card className="pr-[10px] md:pr-10 pl-[10px] md:pl-10 min-w-[30vw] max-w-[90vw] md:w-[500px] w-[90vw] md:h-fit h-[90vh] overflow-x-hidden overflow-y-auto">
 				<CardHeader>
 					<CardTitle className="text-xl">
 						<Package className="h-6 w-6 inline-block mr-2" />
@@ -317,7 +317,7 @@ function App() {
 				</CardFooter>
 			</Card>
 			<AlertDialog open={panelOpen} onOpenChange={setPanelOpen}>
-				<AlertDialogContent className="overflow-hidden">
+				<AlertDialogContent className="overflow-hidden max-w-[90vw] md:max-w-[500px]">
 					<AlertDialogTitle>
 						{loading ? loadingTitle : zipBlobUrl ?
 							<div className="flex items-center">
@@ -340,7 +340,7 @@ function App() {
 						{!loading && !zipBlobUrl && modResults.length > 0 ?
 							<div>
 								<ModResultsDisplay modResults={modResults} />
-								<div className="mt-4 flex justify-end space-x-4">
+								<div className="mt-4 flex justify-end space-x-4 max-w-[90vw] md:max-w-[500px]">
 									<Button
 										variant="destructive"
 										onClick={() => {
@@ -348,10 +348,10 @@ function App() {
 											setPanelOpen(false); // Close the panel
 											console.log("Cancelled");
 										}}
-										className="flex items-center"
+										className="flex items-center max-w-[45%] md:max-w-fit text-nowrap h-fit"
 									>
 										<Ban className="h-4 w-4 inline" />
-										<span>Nevermind, Go Back</span>
+										<span className="hidden md:inline" >Nevermind, Go Back</span>
 									</Button>
 									<Button
 										variant="secondary"
@@ -359,35 +359,35 @@ function App() {
 											console.log("Downloaded mods"); // placeholder for actual download logic
 											handleDownload();
 										}}
-										className="flex items-center"
+										className="flex items-center max-w-[45%] md:max-w-fit text-nowrap h-fit"
 									>
 										<Check className="h-4 w-4 inline" />
-										<span>Confirm and Download Mods</span>
+										<span className="hidden md:inline" >Confirm and Download Mods</span>
 									</Button>
 								</div>
 							</div>
 							: null}
 						{zipBlobUrl ?
-							<div className="mt-4 flex justify-end space-x-4">
+							<div className="mt-4 flex justify-end space-x-4 max-w-[90vw] md:max-w-[500px]">
 								<Button
 									variant="secondary"
 									onClick={() => {
 										setPanelOpen(false); // Close the panel
 										setZipBlobUrl(null); // Clear the blob URL
 									}}
-									className="flex items-center"
+									className="flex items-center max-w-[45%] md:max-w-fit text-nowrap h-fit"
 								>
 									<Ban className="h-4 w-4 inline" />
-									<span>Close</span>
+									<span className="hidden md:inline" >Close</span>
 								</Button>
 								<Button
 									onClick={() => {
 										saveAs(zipBlobUrl, "mods.zip"); // Trigger the download
 									}}
-									className="flex items-center"
+									className="flex items-center max-w-[45%] md:max-w-fit text-nowrap h-fit"
 								>
 									<Download className="h-4 w-4 inline" />
-									<span>Download Modpack</span>
+									<span className="hidden md:inline" >Download Modpack</span>
 								</Button>
 							</div>
 							: null}
