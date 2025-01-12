@@ -26,10 +26,7 @@ import { Progress } from '@/components/ui/progress';
 import JSZip from "jszip";
 import { saveAs } from "file-saver";
 import Bluebird from "bluebird";
-
-function sleep(ms: number) {
-	return new Promise(resolve => setTimeout(resolve, ms));
-}
+import { sleep, uniqueMods, downloadModFile, zipMods, handleResponse } from './modpackUtils';
 
 function App() {
 	const [mods, setMods] = useState<string[]>([]);
@@ -48,44 +45,9 @@ function App() {
 
 	const [zipBlobUrl, setZipBlobUrl] = useState<string | null>(null);
 
-	// remove duplicates from the mod list based on the mod name (if there are 2 mods with the same name but one has an error, keep the one without the error)
-	const uniqueMods = (modList: Mod[]): Mod[] => {
-		const modMap: Map<string, Mod> = new Map();
-
-		modList.forEach(mod => {
-			const modTitle = mod.title || '';
-			// If mod already exists and the current mod has an error, skip it
-			if (modMap.has(modTitle) && !mod.error) {
-				// Replace the mod with the one without the error
-				modMap.set(modTitle, mod);
-			} else if (!modMap.has(modTitle)) {
-				// If mod doesn't exist in the map, add it
-				modMap.set(modTitle, mod);
-			}
-		});
-
-		// Convert the map back to an array
-		return Array.from(modMap.values());
-	}
-
-	const downloadModFile = async (url: string) => {
-		const response = await fetch(url);
-		if (!response.ok) {
-			throw new Error(`Failed to download mod from ${url}`);
-		}
-		const blob = await response.blob();
-		return blob;
-	}
-
-	const constructModpack = async (e: React.FormEvent<HTMLFormElement>) => {
-		e.preventDefault();
-
-		let workingMods = mods;
-
-		// remove duplicate mods
-		workingMods = [...new Set(workingMods)];
-		console.log("removed duplicates", workingMods);
-
+	const validateInputs = (
+		workingMods: string[] = mods
+	) => {
 		let valid = true;
 		if (workingMods.length === 0) {
 			console.log('No mods provided');
@@ -114,7 +76,28 @@ function App() {
 			});
 			valid = false;
 		}
-		if (!valid) return;
+		if (selectedSites.length === 0) {
+			console.log('No websites selected');
+			toast({
+				title: 'No websites selected',
+				description: 'Please select at least one website to search for mods',
+				variant: 'destructive'
+			});
+			valid = false;
+		}
+		return valid;
+	}
+
+	const constructModpack = async (e: React.FormEvent<HTMLFormElement>) => {
+		e.preventDefault();
+
+		let workingMods = mods;
+
+		// remove duplicate mods
+		workingMods = [...new Set(workingMods)];
+		console.log("removed duplicates", workingMods);
+
+		if (!validateInputs(workingMods)) return;
 
 		setPanelOpen(true);  // Open the panel
 		setLoadingTitle('Fetching Mods...');  // Set loading title
@@ -164,8 +147,7 @@ function App() {
 	};
 
 	const handleDownload = async () => {
-		let modDownloadUrls: string[] = [];
-		let modFilenames: string[] = [];
+		let modsList: { url: string, filename: string }[] = [];
 
 		setPanelOpen(true);  // Open the panel if not already open
 		setLoadingTitle('Generating Download Links...');  // Set loading title
@@ -182,46 +164,20 @@ function App() {
 			});
 
 			const response = await fetch(`/api/mod/modrinth/download?${params}`);
-			if (!response.ok) {
-				if (response.status === 429) {
-					toast({
-						title: 'Too many requests',
-						description: 'Please try again later',
-						variant: 'destructive'
-					});
-				} else if (response.status === 403) {
-					toast({
-						title: 'Forbidden',
-						description: 'Please try again later',
-						variant: 'destructive'
-					});
-				} else if (response.status === 504) { 
-					toast({
-						title: 'Gateway Timeout',
-						description: 'Please try again later',
-						variant: 'destructive'
-					});
-				} else {
-					toast({
-						title: 'Error downloading mods',
-						description: 'Please try again later',
-						variant: 'destructive'
-					});
-				}
+			if (!handleResponse(response, toast)) {
 				setLoading(false); // Stop loading if there is an error
 				return;
 			}
+
 			const modResponse: { url: string, filename: string } = await response.json();
-			modDownloadUrls.push(modResponse.url);
-			modFilenames.push(modResponse.filename);
+			modsList.push(modResponse);
 
 			setProgress(((i + 1) / modResults.length) * 100);
 			// sleep for a random time above 200s to avoid rate limiting of 300 requests per minute
 			await sleep(Math.floor(Math.random() * 200) + 200);
 		}
 
-		console.log(modDownloadUrls);
-		console.log(modFilenames);
+		console.log(modsList);
 
 		setProgress(0); // Reset progress for zipping
 		setLoadingTitle('Downloading Mods...'); // Set loading title
@@ -230,13 +186,13 @@ function App() {
 		let downloaded = 0;
 
 		await Bluebird.map(
-			modDownloadUrls,
-			async (url, index) => {
+			modsList,
+			async (mod, _) => {
 				try {
-					const blob = await downloadModFile(url);
-					zip.file(modFilenames[index], blob);
+					const blob = await downloadModFile(mod.url);
+					zip.file(mod.filename, blob);
 				} catch (error) {
-					console.error(`Error downloading ${url}:`, error);
+					console.error(`Error downloading ${mod.url}:`, error);
 					toast({
 						title: 'Error downloading mods',
 						description: 'Please try again later',
@@ -246,7 +202,7 @@ function App() {
 					return;
 				} finally {
 					downloaded++;
-					setProgress((downloaded / modDownloadUrls.length) * 100);
+					setProgress((downloaded / modsList.length) * 100);
 				}
 			},
 			{ concurrency: 5 }
@@ -255,18 +211,7 @@ function App() {
 		setProgress(0); // Reset progress for zipping
 		setLoadingTitle('Zipping Mods...'); // Set loading title
 
-		const zipBlob = await zip.generateAsync({ type: "blob" }, (metadata) => {
-			setProgress(metadata.percent); // Update progress during zipping
-		}).catch((error) => {
-			console.error('Error zipping mods:', error);
-			toast({
-				title: 'Error zipping mods',
-				description: 'Please try again later',
-				variant: 'destructive'
-			});
-			setLoading(false); // Stop loading if there is an error
-			return;
-		});
+		const zipBlob = await zipMods(zip, setProgress);
 		if (!zipBlob) {
 			toast({
 				title: 'Error zipping mods',
@@ -277,13 +222,12 @@ function App() {
 			return;
 		}
 
-		setProgress(100); // Set progress to 100% after zipping
 		toast({
 			title: 'Download Complete',
 			description: 'Your mods have been successfully downloaded'
 		});
 
-		const blobUrl = URL.createObjectURL(zipBlob!);
+		const blobUrl = URL.createObjectURL(zipBlob);
 		setZipBlobUrl(blobUrl); // Store the blob URL
 
 		setLoading(false); // Stop loading after zipping
