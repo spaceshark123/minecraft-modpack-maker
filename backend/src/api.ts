@@ -83,8 +83,12 @@ const cleanModName = (modName: string): string => {
 	return cleanedModName;
 };
 
+// API routes (use rate-limiting here)
+const apiRouter = express.Router();
+apiRouter.use(rateLimiter(200)); // rate limit to at most 1 request every 200ms
+
+app.use('/api', apiRouter);
 app.use(cors());
-app.use(rateLimiter(200)); // rate limit to at most 1 request every 200ms
 
 // serve the frontend
 app.use(express.static(path.join(__dirname, '..', '..', 'frontend', 'dist')));
@@ -94,12 +98,12 @@ app.get('/', (req, res) => {
 	res.sendFile(path.join(__dirname, '..', '..', 'frontend', 'dist', 'index.html'));
 });
 
-app.get('/api', (req, res) => {
+apiRouter.get('/', (req, res) => {
 	res.send('Hello World!');
 });
 
 // API endpoint to scrape Modrinth for a mod with the provided name
-app.get('/api/mod/modrinth', async (req, res) => {
+apiRouter.get('/mod/modrinth', async (req, res) => {
 	const name = (req.query.name as string)?.toLowerCase().trim();
 	const version = req.query.version as string;
 	const loader = req.query.loader as string;
@@ -194,7 +198,7 @@ app.get('/api/mod/modrinth', async (req, res) => {
 });
 
 // API endpoint to download the latest version of a mod from Modrinth given the mod url, version, and loader
-app.get('/api/mod/modrinth/download', async (req, res) => {
+apiRouter.get('/mod/modrinth/download', async (req, res) => {
 	const slug = req.query.slug as string;
 	const version = req.query.version as string;
 	const loader = req.query.loader as string;
@@ -243,7 +247,7 @@ app.get('/api/mod/modrinth/download', async (req, res) => {
 	}
 });
 
-app.get('/api/mod/curseforge', async (req, res) => {
+apiRouter.get('/mod/curseforge', async (req, res) => {
 	// send error response saying curseforge is not supported as it disallows web scraping using cloudflare and captcha
 	res.status(501).json({ error: 'CurseForge is not supported yet.' });
 });
