@@ -18,6 +18,7 @@ export interface Mod {
 	image?: string;
 	title?: string;
 	slug?: string;
+	id?: string;
 	similarity?: number;
 }
 

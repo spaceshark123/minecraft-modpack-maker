@@ -59,6 +59,16 @@ interface CurseforgeSearchResponse {
 	data: CurseforgeMod[];
 }
 
+interface CurseforgeVersionsResponse {
+	data: CurseforgeFile[];
+}
+
+interface CurseforgeFile {
+	filename: string;
+	downloadUrl: string;
+	isAvailable: boolean;
+}
+
 interface CurseforgeMod {
 	id: number;
 	name: string;
@@ -159,7 +169,7 @@ apiRouter.get('/mod/modrinth', async (req, res) => {
 		if (!response) return;
 
 		// Array to store the scraped mod details
-		let bestMatch = { title: '', slug: '', image: '', similarity: 0 };
+		let bestMatch = { title: '', slug: '', id: '', image: '', similarity: 0 };
 		let found = false;
 		let count = 0;
 		const similarityThreshold = 0.5;
@@ -172,12 +182,13 @@ apiRouter.get('/mod/modrinth', async (req, res) => {
 			// Extract the mod title, slug, and image
 			const title = element.title;
 			const slug = element.slug; // slug is the unique identifier for the mod
+			const id = element.project_id;
 			const image = element.icon_url;
 
 			// if name matches exactly, return the mod details
 			console.log('comparing', title.toLowerCase().trim(), 'to', name);
 			if (title.toLowerCase().trim() === name) {
-				bestMatch = { title, slug, image, similarity: 1 };
+				bestMatch = { title, slug, id, image, similarity: 1 };
 				found = true;
 				return;
 			}
@@ -186,7 +197,7 @@ apiRouter.get('/mod/modrinth', async (req, res) => {
 			let cleanedTarget = cleanModName(name);
 			console.log('After cleaning:', cleanedModName, 'vs', cleanedTarget);
 			if (cleanedModName === cleanedTarget) {
-				bestMatch = { title, slug, image, similarity: 1 };
+				bestMatch = { title, slug, id, image, similarity: 1 };
 				found = true;
 				return;
 			}
@@ -195,7 +206,7 @@ apiRouter.get('/mod/modrinth', async (req, res) => {
 			// change similarity based on position (earlier is better)
 			similarity *= Math.pow(0.9, index);
 			if (similarity > similarityThreshold && similarity > bestMatch.similarity) {
-				bestMatch = { title, slug, image, similarity };
+				bestMatch = { title, slug, id, image, similarity };
 			}
 		});
 		console.log('Scraped', count, 'mods on Modrinth for', name, ": " + (!found && bestMatch.similarity < similarityThreshold ? 'No match found' : 'Match found'));
@@ -220,7 +231,7 @@ apiRouter.get('/mod/modrinth/download', async (req, res) => {
 	const version = req.query.version as string;
 	const loader = req.query.loader as string;
 	if (!slug) {
-		res.status(400).json({ error: 'Missing required parameter `url`.' });
+		res.status(400).json({ error: 'Missing required parameter `slug`.' });
 		return;
 	}
 	if (!version) {
@@ -264,6 +275,7 @@ apiRouter.get('/mod/modrinth/download', async (req, res) => {
 	}
 });
 
+// API endpoint to scrape Curseforge for a mod with the provided name
 apiRouter.get('/mod/curseforge', async (req, res) => {
 	const name = (req.query.name as string)?.toLowerCase().trim();
 	const version = req.query.version as string;
@@ -310,7 +322,7 @@ apiRouter.get('/mod/curseforge', async (req, res) => {
 		if (!response) return;
 
 		// Array to store the scraped mod details
-		let bestMatch = { title: '', slug: '', image: '', similarity: 0 };
+		let bestMatch = { title: '', slug: '', id: '', image: '', similarity: 0 };
 		let found = false;
 		let count = 0;
 		const similarityThreshold = 0.5;
@@ -323,12 +335,13 @@ apiRouter.get('/mod/curseforge', async (req, res) => {
 			// Extract the mod title, slug, and image
 			const title = element.name;
 			const slug = element.slug; // slug is the unique identifier for the mod
+			const id = String(element.id);
 			const image = element.logo.url;
 
 			// if name matches exactly, return the mod details
 			console.log('comparing', title.toLowerCase().trim(), 'to', name);
 			if (title.toLowerCase().trim() === name) {
-				bestMatch = { title, slug, image, similarity: 1 };
+				bestMatch = { title, slug, id, image, similarity: 1 };
 				found = true;
 				return;
 			}
@@ -337,7 +350,7 @@ apiRouter.get('/mod/curseforge', async (req, res) => {
 			let cleanedTarget = cleanModName(name);
 			console.log('After cleaning:', cleanedModName, 'vs', cleanedTarget);
 			if (cleanedModName === cleanedTarget) {
-				bestMatch = { title, slug, image, similarity: 1 };
+				bestMatch = { title, slug, id, image, similarity: 1 };
 				found = true;
 				return;
 			}
@@ -346,7 +359,7 @@ apiRouter.get('/mod/curseforge', async (req, res) => {
 			// change similarity based on position (earlier is better)
 			similarity *= Math.pow(0.9, index);
 			if (similarity > similarityThreshold && similarity > bestMatch.similarity) {
-				bestMatch = { title, slug, image, similarity };
+				bestMatch = { title, slug, id, image, similarity };
 			}
 		});
 		console.log('Scraped', count, 'mods on Curseforge for', name, ": " + (!found && bestMatch.similarity < similarityThreshold ? 'No match found' : 'Match found'));
@@ -362,6 +375,64 @@ apiRouter.get('/mod/curseforge', async (req, res) => {
 	} catch (error) {
 		console.error('Error occurred while scraping:', error);
 		res.status(500).json({ error: 'Failed to scrape mods.' });
+	}
+});
+
+// API endpoint to download the latest version of a mod from Curseforge given the mod url, version, and loader
+apiRouter.get('/mod/curseforge/download', async (req, res) => {
+	const id = req.query.id as string;
+	const version = req.query.version as string;
+	const loader = req.query.loader as string;
+	if (!id) {
+		res.status(400).json({ error: 'Missing required parameter `id`.' });
+		return;
+	}
+	if (!version) {
+		res.status(400).json({ error: 'Missing required parameter `version`.' });
+		return;
+	}
+	if (!loader) {
+		res.status(400).json({ error: 'Missing required parameter `loader`.' });
+		return;
+	}
+	try {
+		// Make an HTTP GET request to the Modrinth API to get the versions of the mod
+		const response = await axios.get<CurseforgeVersionsResponse>(`https://api.curseforge.com/v1/mods/${id}/files`, {
+			headers: {
+				'x-api-key': curseforgeAPIKey
+			},
+			params: {
+				gameVersion: version,
+				modLoaderType: curseforgeLoaderIDs[loaders.indexOf(loader)],
+				pageSize: 1
+			}
+		}).then((res) => {
+			return res.data;
+		}).catch((error) => {
+			// if 429 error, return a 429 error
+			if (error.response.status === 429) {
+				console.error('Too many requests. Please try again later.');
+				res.status(429).json({ error: 'Too many requests. Please try again later.' });
+				return;
+			}
+		});
+		if (!response || response.data.length === 0) { 
+			res.status(404).json({ error: 'No files found for mod.' });
+			return;
+		}
+		if (!response.data[0].isAvailable) {
+			res.status(404).json({ error: 'File not available for download.' });
+			return;
+		}
+
+		console.log(`Found a file for mod ${id} version ${version} loader ${loader}`);
+
+		// find the primary file for the latest release of the mod for the specified loader and game version
+		const file = response.data[0];
+		res.json({ url: file.downloadUrl, filename: file.filename });
+	} catch (error) {
+		console.error('Error occurred while downloading:', error);
+		res.status(500).json({ error: 'Failed to download mod.' });
 	}
 });
 
