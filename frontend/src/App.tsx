@@ -110,9 +110,28 @@ function App() {
 			const mod = workingMods[i];
 
 			// For each mod, make a request to the backend to get the mod data
-			const url = `/api/mod/modrinth?name=${mod}&version=${selectedVersion}&loader=${selectedLoader}`;
-			const response = await fetch(url);
-			if (response.status === 429) {
+			let modData: Mod | null = null;
+			let modStatus: number | null = null;
+			for (let site of selectedSites) {
+				const url = `/api/mod/${site}?name=${mod}&version=${selectedVersion}&loader=${selectedLoader}`;
+				const response = await fetch(url);
+				const data: Mod = await response.json();
+				data.website = site;
+				if (modData === null) { // First mod data
+					modData = data;
+					modStatus = response.status;
+				} else if (!data.error && data.similarity! > modData.similarity!) { // Higher similarity
+					modData = data;
+					modStatus = response.status;
+				} else if (!data.error && data.similarity === modData.similarity && data.website === 'modrinth') { // Prefer Modrinth
+					modData = data;
+					modStatus = response.status;
+				} else if (data.error && !modData.error) { // Prefer non-error
+					modData = data;
+					modStatus = response.status;
+				}
+			}
+			if (modStatus === 429) {
 				toast({
 					title: 'Too many requests',
 					description: 'Please try again later',
@@ -122,15 +141,14 @@ function App() {
 				setPanelOpen(false);  // Close the panel
 				setLoading(false);    // Stop loading
 				return;
-			} else if (response.status === 404) {
+			} else if (modStatus === 404) {
 				toast({
 					description: `${mod} not found`,
 					variant: 'destructive'
 				});
 				modsList.push({ title: mod, error: true });
 			} else {
-				const data = await response.json();
-				modsList.push(data);
+				modsList.push(modData as Mod);
 			}
 
 			// Update progress after each mod fetch
@@ -159,11 +177,12 @@ function App() {
 			if (mod.error) continue; // Skip mods with errors
 			const params = new URLSearchParams({
 				slug: mod.slug,
+				id: mod.id,
 				version: selectedVersion!,
 				loader: selectedLoader!
 			});
 
-			const response = await fetch(`/api/mod/modrinth/download?${params}`);
+			const response = await fetch(`/api/mod/${mod.website}/download?${params}`);
 			if (!handleResponse(response, toast)) {
 				setLoading(false); // Stop loading if there is an error
 				return;

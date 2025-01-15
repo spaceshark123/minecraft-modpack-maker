@@ -20,6 +20,7 @@ export interface Mod {
 	slug?: string;
 	id?: string;
 	similarity?: number;
+	website?: string;
 }
 
 interface ModResultsDisplayProps {
@@ -75,7 +76,7 @@ function ModResultsDisplay({ modResults }: ModResultsDisplayProps) {
 								{/* Link to mod */}
 								<TableCell className="py-2">
 									<a
-										href={`https://modrinth.com/mod/${mod.slug}`}
+										href={mod.website === 'modrinth' ? `https://modrinth.com/mod/${mod.slug}` : `https://www.curseforge.com/minecraft/mc-mods/${mod.slug}`}
 										target="_blank"
 										rel="noopener noreferrer"
 										className="text-blue-500 underline"

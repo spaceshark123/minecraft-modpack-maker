@@ -31,12 +31,6 @@ function SiteSelector({ selectedSites, update }: SiteSelectorProps) {
 		}
 	};
 
-	useEffect(() => {
-		if (selectedSites.length === 0) {
-			update(["modrinth"]); // Default to Modrinth
-		}
-	}, []);
-
 	return (
 		<DropdownMenu>
 			<DropdownMenuTrigger asChild>
@@ -55,7 +49,7 @@ function SiteSelector({ selectedSites, update }: SiteSelectorProps) {
 						key={site.id}
 						checked={selectedSites.includes(site.id)}
 						onCheckedChange={() => handleSiteToggle(site.id)}
-						disabled={site.id === "placeholder" || site.id === "curseforge"}
+						disabled={site.id === "placeholder"}
 					>
 						<span className="flex items-center">
 							{site.name}
