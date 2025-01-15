@@ -4,7 +4,7 @@ import { Request, Response, NextFunction } from 'express';
 let requestQueue: (() => void)[] = [];
 let lastRequestTime: number = 0;
 
-// Middleware for rate throttling (if a request is made within 200ms of the last request, delay it)
+// Middleware for rate throttling (if a request is made within the delay, it will be delayed until the delay is over)
 const rateLimiter = (delayMs: number) => {
 	console.log(`Rate limiting requests to 1 every ${delayMs}ms`);
 
@@ -12,7 +12,7 @@ const rateLimiter = (delayMs: number) => {
 	return (req: Request, res: Response, next: NextFunction) => {
 		const now = Date.now();
 		const timeSinceLastRequest = now - lastRequestTime;
-		const delay = Math.max(rateLimit - timeSinceLastRequest, 0); // Minimum delay of 200ms between requests (300 requests per minute)
+		const delay = Math.max(rateLimit - timeSinceLastRequest, 0); // Calculate the delay needed
 
 		// Function to process the request after the delay
 		const processRequest = () => {
@@ -35,6 +35,8 @@ const rateLimiter = (delayMs: number) => {
 					}
 				}, delay);
 			});
+
+			console.log(`Delaying request to ${req.path} by ${delay}ms`);
 
 			// If it's the first item in the queue, process it
 			if (requestQueue.length === 1) {

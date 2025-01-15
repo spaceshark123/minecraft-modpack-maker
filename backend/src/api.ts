@@ -110,12 +110,17 @@ const cleanModName = (modName: string): string => {
 	return cleanedModName;
 };
 
-// API routes (use rate-limiting here)
 const apiRouter = express.Router();
-apiRouter.use(rateLimiter(200)); // rate limit to at most 1 request every 200ms
+
+const modrinthRouter = express.Router();
+modrinthRouter.use(rateLimiter(200)); // rate limit to at most 1 request every 200ms
+const curseforgeRouter = express.Router();
+curseforgeRouter.use(rateLimiter(200)); // rate limit to at most 1 request every 200ms
 
 app.use('/api', apiRouter);
-app.use(cors());
+apiRouter.use('/mod/modrinth', modrinthRouter);
+apiRouter.use('/mod/curseforge', curseforgeRouter);
+app.use(cors()); // enable CORS
 
 // serve the frontend
 app.use(express.static(path.join(__dirname, '..', '..', 'frontend', 'dist')));
@@ -130,7 +135,7 @@ apiRouter.get('/', (req, res) => {
 });
 
 // API endpoint to scrape Modrinth for a mod with the provided name
-apiRouter.get('/mod/modrinth', async (req, res) => {
+modrinthRouter.get('/', async (req, res) => {
 	const name = (req.query.name as string)?.toLowerCase().trim();
 	const version = req.query.version as string;
 	const loader = req.query.loader as string;
@@ -226,7 +231,7 @@ apiRouter.get('/mod/modrinth', async (req, res) => {
 });
 
 // API endpoint to download the latest version of a mod from Modrinth given the mod url, version, and loader
-apiRouter.get('/mod/modrinth/download', async (req, res) => {
+modrinthRouter.get('/download', async (req, res) => {
 	const slug = req.query.slug as string;
 	const version = req.query.version as string;
 	const loader = req.query.loader as string;
@@ -276,7 +281,7 @@ apiRouter.get('/mod/modrinth/download', async (req, res) => {
 });
 
 // API endpoint to scrape Curseforge for a mod with the provided name
-apiRouter.get('/mod/curseforge', async (req, res) => {
+curseforgeRouter.get('/', async (req, res) => {
 	const name = (req.query.name as string)?.toLowerCase().trim();
 	const version = req.query.version as string;
 	const loader = req.query.loader as string;
@@ -379,7 +384,7 @@ apiRouter.get('/mod/curseforge', async (req, res) => {
 });
 
 // API endpoint to download the latest version of a mod from Curseforge given the mod url, version, and loader
-apiRouter.get('/mod/curseforge/download', async (req, res) => {
+curseforgeRouter.get('/download', async (req, res) => {
 	const id = req.query.id as string;
 	const version = req.query.version as string;
 	const loader = req.query.loader as string;
