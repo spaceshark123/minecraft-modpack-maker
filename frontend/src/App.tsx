@@ -126,7 +126,7 @@ function App() {
 				} else if (!data.error && data.similarity === modData.similarity && data.website === 'modrinth') { // Prefer Modrinth
 					modData = data;
 					modStatus = response.status;
-				} else if (data.error && !modData.error) { // Prefer non-error
+				} else if (!data.error && modData.error) { // Prefer non-error
 					modData = data;
 					modStatus = response.status;
 				}
