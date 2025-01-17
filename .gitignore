@@ -28,3 +28,6 @@ tmp
 tmp/*
 
 .env
+
+# compiled test files
+test/**/*.js

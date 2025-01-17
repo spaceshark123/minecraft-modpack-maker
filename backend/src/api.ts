@@ -1,4 +1,4 @@
-import express, { Request, Response, NextFunction } from 'express';
+import express from 'express';
 import cors from 'cors';
 import axios from 'axios';
 import { distance as levenshtein } from 'fastest-levenshtein';
@@ -9,7 +9,6 @@ import dotenv from 'dotenv';
 dotenv.config(); // load environment variables from .env file
 
 const app = express();
-const port = process.env.PORT || 3000;
 const curseforgeAPIKey = process.env.CURSEFORGE_API_KEY;
 
 // use unique user agent to avoid being blocked
@@ -441,11 +440,4 @@ curseforgeRouter.get('/download', async (req, res) => {
 	}
 });
 
-app.listen(port, () => {
-	console.log('Server is running on http://localhost:' + port);
-});
-
-process.on('SIGINT', async () => {
-	console.log('Shutting down server...');
-	process.exit(0);
-});
+export default app;
