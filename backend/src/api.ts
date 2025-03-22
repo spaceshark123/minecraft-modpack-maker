@@ -133,6 +133,31 @@ apiRouter.get('/', (req, res) => {
 	res.send('Hello World!');
 });
 
+// API endpoint to download a file from a given URL (to avoid CORS issues)
+apiRouter.get('/file', async (req, res) => {
+	const url = req.query.url as string;
+	if (!url) {
+		res.status(400).json({ error: 'Missing required parameter `url`.' });
+		return;
+	}
+	try {
+        // Fetch the file from the external URL using axios
+        const response = await axios.get(url, {
+            responseType: 'stream', // This is important for handling binary data as a stream
+        });
+
+        // Set headers for the file download, including content type and file name
+        res.setHeader('Content-Type', response.headers['content-type']);
+        res.setHeader('Content-Disposition', `attachment`);
+
+        // Pipe the response data directly to the client
+        response.data.pipe(res);
+    } catch (error) {
+        console.error('Error fetching the file:', error);
+        res.status(500).send('Error downloading file.');
+    }
+});
+
 // API endpoint to scrape Modrinth for a mod with the provided name
 modrinthRouter.get('/', async (req, res) => {
 	const name = (req.query.name as string)?.toLowerCase().trim();

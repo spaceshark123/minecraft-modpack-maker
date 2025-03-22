@@ -28,7 +28,7 @@ export const uniqueMods = (modList: Mod[]): Mod[] => {
 }
 
 export const downloadModFile = async (url: string) => {
-	const response = await fetch(url);
+	const response = await fetch(`api/file?url=${encodeURIComponent(url)}`);
 	if (!response.ok) {
 		throw new Error(`Failed to download mod from ${url}`);
 	}
