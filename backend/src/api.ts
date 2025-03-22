@@ -254,7 +254,7 @@ modrinthRouter.get('/download', async (req, res) => {
 			},
 			params: {
 				loaders: `["${loader}"]`,
-				game_versions: `[${version}]`
+				game_versions: `["${version}"]`
 			}
 		}).then((res) => {
 			return res.data;
