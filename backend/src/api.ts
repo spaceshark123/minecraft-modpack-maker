@@ -236,6 +236,11 @@ modrinthRouter.get('/', async (req, res) => {
 			similarity *= Math.pow(0.9, index);
 			if (similarity > similarityThreshold && similarity > bestMatch.similarity) {
 				bestMatch = { title, slug, id, image, similarity };
+			} else if (cleanedModName.replace(/\s+/g, '') === cleanedTarget.replace(/\s+/g, '')) {
+				// they match without spaces, so we can consider them equal, but not exact
+				similarity = 0.9;
+				found = true;
+				bestMatch = { title, slug, id, image, similarity };
 			}
 		});
 		console.log('Scraped', count, 'mods on Modrinth for', name, ": " + (!found && bestMatch.similarity < similarityThreshold ? 'No match found' : 'Match found'));
@@ -388,6 +393,11 @@ curseforgeRouter.get('/', async (req, res) => {
 			// change similarity based on position (earlier is better)
 			similarity *= Math.pow(0.9, index);
 			if (similarity > similarityThreshold && similarity > bestMatch.similarity) {
+				bestMatch = { title, slug, id, image, similarity };
+			} else if (cleanedModName.replace(/\s+/g, '') === cleanedTarget.replace(/\s+/g, '')) {
+				// they match without spaces, so we can consider them equal, but not exact
+				similarity = 0.9;
+				found = true;
 				bestMatch = { title, slug, id, image, similarity };
 			}
 		});
