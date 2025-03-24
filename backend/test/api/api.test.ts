@@ -2,9 +2,26 @@ import app from '../../src/api'
 import request from 'supertest';
 
 let server: any;
+let originalConsole: any;
 
 beforeAll(async () => {
 	server = request(app); // initialize the test server
+
+	// mute console logs while testing
+	originalConsole = { ...console };
+	global.console = {
+		...console,
+		log: jest.fn(),
+		debug: jest.fn(),
+		info: jest.fn(),
+		warn: jest.fn(),
+		error: jest.fn(),
+	};
+});
+
+afterAll(async () => {
+	// restore console logs after testing
+	global.console = originalConsole;
 });
 
 describe('GET /api', () => {
