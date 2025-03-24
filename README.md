@@ -2,14 +2,27 @@
 
 Minecraft Modpack Maker is a web application that simplifies the process of creating custom Minecraft modpacks. Users can input a list of mods, specify the Minecraft version, choose a mod installer, and select mod forums to search on. The application then collects all the mods into a single zip file for easy download using realtime web scraping.
 
-Currently hosted/deployed using render.com
+Currently hosted/deployed using the free tier of render.com (meaning the site has a startup time of ~30 seconds for periods of inactivity)
 
 ## Features
 
-- **Custom Modpacks**: Create modpacks with real mod files instead of using a modpack launcher.
-- **Web Scraping**: Automatically gather mods from specified forums.
+- **Custom Modpacks**: Create modpacks with real mod files instead of using a modpack launcher, allowing for complete control
+- **Automatic Scraping**: Automatically gather up-to-date mods from specified forums.
+- **Full Version Support**: Supports all major Minecraft versions and is constantly updated.
+- **Popular Modloaders**: Supports most widely used modloaders: forge, fabric, neoforge, quilt
+- **Robust Mod Search**: Small mistakes and typos with the mod name on the list will not affect the quality of results.
 - **Easy Download**: Download all selected mods in a single zip file.
 - **User-Friendly Interface**: Simple and intuitive UI for selecting mods and settings.
+
+## How to Use
+
+1. Enter list of mods into text box (copy/paste or manually). mods can be separated using commas or different lines
+2. Select the desired Minecraft mod loader from the dropdown
+3. Select the desired Minecraft game version from the dropdown
+4. Select the websites/forums that you want to source mods from. Choose all for the best results.
+5. Press construct! The mods will be searched for and a list of found mods will appear to allow you to confirm that the correct mods have been found for your list. If you are satisfied with the mods, press confirm to start the download process
+6. After the mods have been downloaded, press the download button to recieve your modpack as a .zip file
+7. extract the contents of the .zip file to receive the mods folder, which can be directly put into the .minecraft folder
 
 ## Tech Stack
 
