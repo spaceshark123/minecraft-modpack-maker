@@ -63,7 +63,7 @@ interface CurseforgeVersionsResponse {
 }
 
 interface CurseforgeFile {
-	filename: string;
+	fileName: string;
 	downloadUrl: string;
 	isAvailable: boolean;
 }
@@ -468,7 +468,7 @@ curseforgeRouter.get('/download', async (req, res) => {
 
 		// find the primary file for the latest release of the mod for the specified loader and game version
 		const file = response.data[0];
-		res.json({ url: file.downloadUrl, filename: file.filename });
+		res.status(200).json({ url: file.downloadUrl, filename: file.fileName });
 	} catch (error) {
 		console.error('Error occurred while downloading:', error);
 		res.status(500).json({ error: 'Failed to download mod.' });

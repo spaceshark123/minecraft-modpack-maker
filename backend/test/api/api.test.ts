@@ -174,3 +174,26 @@ describe('GET /api/mod/curseforge', () => {
 		expect(response.body).toHaveProperty('similarity', 0.531441);
 	});
 });
+
+describe('GET /api/mod/curseforge/download', () => {
+	let response: Response;
+
+	it('successfully fetches mod download URL from CurseForge', async () => {
+		response = await server.get('/api/mod/curseforge/download').query({
+			id: '306612', // Fabric API ID
+			version: '1.20.1',
+			loader: 'fabric'
+		});
+
+		expect(response.status).toBe(200);
+		expect(response.body).toHaveProperty('url');
+		expect(response.body).toHaveProperty('filename');
+		expect(response.body).toHaveProperty('url', expect.stringContaining('https://edge.forgecdn.net/files/'));
+	});
+
+	it('returns 400 for missing parameters', async () => {
+		response = await server.get('/api/mod/curseforge/download');
+
+		expect(response.status).toBe(400);
+	});
+});
