@@ -101,3 +101,76 @@ describe('GET /api/mod/modrinth', () => {
 		expect(response.body).toHaveProperty('similarity', 0.7200000000000001);
 	});
 });
+
+describe('GET /api/mod/modrinth/download', () => {
+	let response: Response;
+
+	it('successfully fetches mod download URL from Modrinth', async () => {
+		response = await server.get('/api/mod/modrinth/download').query({
+			slug: 'fabric-api',
+			version: '1.20.1',
+			loader: 'fabric'
+		});
+
+		expect(response.status).toBe(200);
+		expect(response.body).toHaveProperty('url');
+		expect(response.body).toHaveProperty('filename');
+		expect(response.body).toHaveProperty('url', expect.stringContaining('https://cdn.modrinth.com/data/P7dR8mSH/versions/'));
+	});
+
+	it('returns 400 for missing parameters', async () => {
+		response = await server.get('/api/mod/modrinth/download');
+
+		expect(response.status).toBe(400);
+	});
+});
+
+describe('GET /api/mod/curseforge', () => {
+	let response: Response;
+
+	it('successfully fetches mod data from CurseForge', async () => {
+		response = await server.get('/api/mod/curseforge').query({
+			name: 'fabric api',
+			version: '1.20.1',
+			loader: 'fabric'
+		});
+
+		expect(response.status).toBe(200);
+		expect(response.body).toHaveProperty('title', 'Fabric API');
+		expect(response.body).toHaveProperty('slug', 'fabric-api');
+		expect(response.body).toHaveProperty('id', "306612");
+		expect(response.body).toHaveProperty('image');
+		expect(response.body).toHaveProperty('similarity', 1);
+	});
+
+	it('returns 404 for invalid mod', async () => {
+		response = await server.get('/api/mod/curseforge').query({
+			name: 'lorem ipsum',
+			version: '1.0.0',
+			loader: 'fabric'
+		});
+
+		expect(response.status).toBe(404);
+	});
+
+	it('returns 400 for missing parameters', async () => {
+		response = await server.get('/api/mod/curseforge');
+
+		expect(response.status).toBe(400);
+	});
+
+	it('fuzzy searches for similar mods', async () => {
+		response = await server.get('/api/mod/curseforge').query({
+			name: 'fabric ap',
+			version: '1.20.1',
+			loader: 'fabric'
+		});
+
+		expect(response.status).toBe(200);
+		expect(response.body).toHaveProperty('title', 'Fabric API');
+		expect(response.body).toHaveProperty('slug', 'fabric-api');
+		expect(response.body).toHaveProperty('id', "306612");
+		expect(response.body).toHaveProperty('image');
+		expect(response.body).toHaveProperty('similarity', 0.531441);
+	});
+});
