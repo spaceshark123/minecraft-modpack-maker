@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import * as cheerio from 'cheerio';
 import axios from 'axios';
 import { distance as levenshtein } from 'fastest-levenshtein';
 import path from 'path';
@@ -80,10 +81,10 @@ interface CurseforgeMod {
 const cleanModName = (modName: string): string => {
 	// normalize mod name (lowercase, trim, and remove extra spaces)
 	let cleanedModName = modName.toLowerCase().trim().replace(/\s+/g, ' ');
-
+	
 	// remove loaders mentioned inside parentheses or square brackets
 	cleanedModName = cleanedModName.replace(loaderParenthesisRegex, '').trim();
-
+	
 	// remove trailing loaders and special words
 	while (cleanedModName.length > 0) {
 		// find and remove trailing loaders
@@ -141,24 +142,74 @@ apiRouter.get('/file', async (req, res) => {
 		return;
 	}
 	try {
-        // Fetch the file from the external URL using axios
-        const response = await axios.get(url, {
-            responseType: 'stream', // This is important for handling binary data as a stream
-        });
-
-        // Set headers for the file download, including content type and file name
-        res.setHeader('Content-Type', response.headers['content-type']);
-        res.setHeader('Content-Disposition', `attachment`);
-
-        // Pipe the response data directly to the client
-        response.data.pipe(res);
-    } catch (error) {
-        console.error('Error fetching the file:', error);
-        res.status(500).send('Error downloading file.');
-    }
+		// Fetch the file from the external URL using axios
+		const response = await axios.get(url, {
+			responseType: 'stream', // This is important for handling binary data as a stream
+		});
+		
+		// Set headers for the file download, including content type and file name
+		res.setHeader('Content-Type', response.headers['content-type']);
+		res.setHeader('Content-Disposition', `attachment`);
+		
+		// Pipe the response data directly to the client
+		response.data.pipe(res);
+	} catch (error) {
+		console.error('Error fetching the file:', error);
+		res.status(500).send('Error downloading file.');
+	}
 });
 
-// API endpoint to scrape Modrinth for a mod with the provided name
+// Helper function to convert version string to array of integers
+function versionKey(version: string) {
+	return version.split(".").map(part => parseInt(part, 10));
+}
+
+// API endpoint to scrape up-to-date Minecraft versions from Modrinth
+apiRouter.get("/versions", async (req, res) => {
+	try {
+		const url = "https://modrinth.com/mods";
+
+		console.log("Scraping Minecraft versions from:", url);
+
+		const response = await axios.get(url);
+		const $ = cheerio.load(response.data);
+		const versionsSet = new Set();
+		
+		$("span").each((_, element) => {
+			const text = $(element).text().trim();
+			if (
+				text &&
+				text.includes(".") &&
+				text.split(".").every(part => /^\d+$/.test(part))
+			) {
+				versionsSet.add(text);
+			}
+		});
+		
+		// Convert set to array and sort
+		const uniqueVersions: string[] = Array.from(versionsSet) as string[];
+		const sortedVersions = uniqueVersions.sort((a, b) => {
+			const aKey = versionKey(a);
+			const bKey = versionKey(b);
+			for (let i = 0; i < Math.max(aKey.length, bKey.length); i++) {
+				const aPart = aKey[i] || 0;
+				const bPart = bKey[i] || 0;
+				if (aPart !== bPart) return bPart - aPart;
+			}
+			return 0;
+		});
+		
+		res.json({
+			count: sortedVersions.length,
+			versions: sortedVersions,
+		});
+	} catch (error) {
+		console.error("Error scraping Minecraft versions:", error);
+		res.status(500).json({ error: error });
+	}
+});
+
+// API endpoint to request Modrinth for a mod with the provided name
 modrinthRouter.get('/', async (req, res) => {
 	const name = (req.query.name as string)?.toLowerCase().trim();
 	const version = req.query.version as string;
@@ -196,24 +247,24 @@ modrinthRouter.get('/', async (req, res) => {
 			}
 		});
 		if (!response) return;
-
+		
 		// Array to store the scraped mod details
 		let bestMatch = { title: '', slug: '', id: '', image: '', similarity: 0 };
 		let found = false;
 		let count = 0;
 		const similarityThreshold = 0.5;
-
+		
 		// find the mod whose title best matches the provided name (the name doesn't have to match exactly)
 		response.hits.forEach((element, index) => {
 			if (found) return;
 			count++;
-
+			
 			// Extract the mod title, slug, and image
 			const title = element.title;
 			const slug = element.slug; // slug is the unique identifier for the mod
 			const id = element.project_id;
 			const image = element.icon_url;
-
+			
 			// if name matches exactly, return the mod details
 			console.log('comparing', title.toLowerCase().trim(), 'to', name);
 			if (title.toLowerCase().trim() === name) {
@@ -244,13 +295,13 @@ modrinthRouter.get('/', async (req, res) => {
 			}
 		});
 		console.log('Scraped', count, 'mods on Modrinth for', name, ": " + (!found && bestMatch.similarity < similarityThreshold ? 'No match found' : 'Match found'));
-
+		
 		// If no mod was found, return a 404 error
 		if (!found && bestMatch.similarity < similarityThreshold) {
 			res.status(404).json({ error: 'Mod not found.' });
 			return;
 		}
-
+		
 		// Send the scraped mod data as a JSON response
 		res.json(bestMatch);
 	} catch (error) {
@@ -297,9 +348,9 @@ modrinthRouter.get('/download', async (req, res) => {
 			}
 		});
 		if (!response) return;
-
+		
 		console.log('Found', response[0].files.length, `files for mod ${slug} version ${version} loader ${loader}`);
-
+		
 		// find the primary file for the latest release of the mod for the specified loader and game version
 		const file = response[0].files.find((file) => file.primary) || response[0].files[0];
 		res.json({ url: file.url, filename: file.filename });
@@ -309,7 +360,7 @@ modrinthRouter.get('/download', async (req, res) => {
 	}
 });
 
-// API endpoint to scrape Curseforge for a mod with the provided name
+// API endpoint to request Curseforge for a mod with the provided name
 curseforgeRouter.get('/', async (req, res) => {
 	const name = (req.query.name as string)?.toLowerCase().trim();
 	const version = req.query.version as string;
@@ -354,24 +405,24 @@ curseforgeRouter.get('/', async (req, res) => {
 			}
 		});
 		if (!response) return;
-
+		
 		// Array to store the scraped mod details
 		let bestMatch = { title: '', slug: '', id: '', image: '', similarity: 0 };
 		let found = false;
 		let count = 0;
 		const similarityThreshold = 0.5;
-
+		
 		// find the mod whose title best matches the provided name (the name doesn't have to match exactly)
 		response.data.forEach((element, index) => {
 			if (found) return;
 			count++;
-
+			
 			// Extract the mod title, slug, and image
 			const title = element.name;
 			const slug = element.slug; // slug is the unique identifier for the mod
 			const id = String(element.id);
 			const image = element.logo.url;
-
+			
 			// if name matches exactly, return the mod details
 			console.log('comparing', title.toLowerCase().trim(), 'to', name);
 			if (title.toLowerCase().trim() === name) {
@@ -402,13 +453,13 @@ curseforgeRouter.get('/', async (req, res) => {
 			}
 		});
 		console.log('Scraped', count, 'mods on Curseforge for', name, ": " + (!found && bestMatch.similarity < similarityThreshold ? 'No match found' : 'Match found'));
-
+		
 		// If no mod was found, return a 404 error
 		if (!found && bestMatch.similarity < similarityThreshold) {
 			res.status(404).json({ error: 'Mod not found.' });
 			return;
 		}
-
+		
 		// Send the scraped mod data as a JSON response
 		res.json(bestMatch);
 	} catch (error) {
@@ -463,9 +514,9 @@ curseforgeRouter.get('/download', async (req, res) => {
 			res.status(404).json({ error: 'File not available for download.' });
 			return;
 		}
-
+		
 		console.log(`Found a file for mod ${id} version ${version} loader ${loader}`);
-
+		
 		// find the primary file for the latest release of the mod for the specified loader and game version
 		const file = response.data[0];
 		res.status(200).json({ url: file.downloadUrl, filename: file.fileName });

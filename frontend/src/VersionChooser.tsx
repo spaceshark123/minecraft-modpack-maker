@@ -17,11 +17,11 @@ function VersionChooser({ update }: VersionChooserProps) {
 
 	useEffect(() => {
 		console.log('Fetching versions');
-		// Fetch the JSON file from the public folder
-		fetch('/versions/minecraft-versions.json')
+		// Fetch the up-to-date versions from the endpoint
+		fetch('/api/versions')
 			.then((response) => response.json())
 			.then((data) => {
-				setVersions(data);
+				setVersions(data.versions);
 			});
 		console.log('Fetched versions');
 	}, []);
