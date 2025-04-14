@@ -44,11 +44,42 @@ describe('GET /api/file', () => {
 	let response: Response;
 
 	beforeAll(async () => {
-		response = await server.get('/api/file').query({ url: 'https://file-examples.com/storage/fe75a92b1367e14f59b6db4/2017/02/file_example_JSON_1kb.json' });
+		response = await server.get('/api/file').query({ url: 'https://file-examples.com/wp-content/storage/2017/02/file_example_CSV_5000.csv' });
 	});
 
 	it('should return 200 OK', async () => {
 		expect(response.status).toBe(200);
+	});
+});
+
+describe('GET /api/versions', () => {
+	let response: Response;
+	let responseBody: any; // Declare responseBody here
+
+	beforeAll(async () => {
+		response = await server.get('/api/versions');
+		responseBody = response.body as { count?: number; versions?: string[] }; // Access the parsed JSON directly
+	});
+
+	it('should return 200 OK', async () => {
+		expect(response.status).toBe(200);
+	});
+
+	it('should return a count of versions', async () => {
+		expect(responseBody).toHaveProperty('count');
+		expect(responseBody.count).toBeGreaterThan(0);
+	});
+
+	it('should return a list of versions', async () => {
+		expect(responseBody).toHaveProperty('versions');
+		expect(responseBody.versions).toBeInstanceOf(Array);
+		expect(responseBody.versions.length).toBeGreaterThan(0);
+		expect(responseBody.count).toBe(responseBody.versions.length);
+		expect(responseBody.versions).toEqual(
+			expect.arrayContaining([
+				expect.stringMatching(/^\d+\.\d+\.\d+$/) // Check if all versions are in the format x.x.x
+			])
+		);
 	});
 });
 
