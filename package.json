@@ -14,7 +14,10 @@
     "start": "npm run start:backend",
     "build:frontend": "npm --workspace frontend run build",
     "build:backend": "npm --workspace backend run build",
-    "build": "npm run build:frontend && npm run build:backend"
+    "build": "npm run build:frontend && npm run build:backend",
+    "test:backend": "npm --workspace backend run test",
+    "test:frontend": "echo \"No tests specified for frontend\"",
+    "test": "npm run test:backend && npm run test:frontend"
   },
   "keywords": [],
   "author": "",

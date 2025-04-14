@@ -9,7 +9,7 @@ Currently hosted/deployed using the free tier of render.com (meaning the site ha
 - **Custom Modpacks**: Create modpacks with real mod files instead of using a modpack launcher, allowing for complete control
 - **Automatic Scraping**: Automatically gather up-to-date mods from specified forums.
 - **Full Version Support**: Supports all major Minecraft versions and is constantly updated.
-- **Popular Modloaders**: Supports most widely used modloaders: forge, fabric, neoforge, quilt
+- **Popular Modloaders**: Supports most widely used modloaders: Forge, Fabric, Neoforge, and Quilt
 - **Robust Mod Search**: Small mistakes and typos with the mod name on the list will not affect the quality of results.
 - **Easy Download**: Download all selected mods in a single zip file.
 - **User-Friendly Interface**: Simple and intuitive UI for selecting mods and settings.
@@ -98,6 +98,14 @@ Currently hosted/deployed using the free tier of render.com (meaning the site ha
 
 3. Open your browser and navigate to the URL shown, usually `http://localhost:3000`
 
+### Testing the Application
+
+The application incorporates usage of unit testing to ensure the integrity of each part of the frontend and backend separately using the popular Jest testing framework. To run these tests, run:
+
+```sh
+npm run test
+```
+
 ## Additional Commands
 
 - Build frontend website only
@@ -137,5 +145,6 @@ If you encounter any issues, please check the following:
 - Ensure all dependencies are installed correctly.
 - Verify that the backend and frontend servers are running.
 - Check the browser console and server logs for any error messages.
+- Run the unit tests to make sure vital parts of the code are working as intended.
 
 For further assistance, please open an issue on the GitHub repository.
