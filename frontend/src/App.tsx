@@ -27,8 +27,11 @@ import JSZip from "jszip";
 import { saveAs } from "file-saver";
 import Bluebird from "bluebird";
 import { sleep, uniqueMods, downloadModFile, zipMods, handleResponse } from './modpackUtils';
+import Presets from "./Presets";
 
 function App() {
+	const [value, setValue] = useState<string>(''); // State to hold the value of the mods input textarea
+
 	const [mods, setMods] = useState<string[]>([]);
 	const [selectedLoader, setSelectedLoader] = useState<string | null>(null);
 	const [selectedVersion, setSelectedVersion] = useState<string | null>(null);
@@ -254,6 +257,11 @@ function App() {
 
 	return (
 		<>
+			<Presets update={(modList: string[]) => {
+				setValue(modList.join('\n')); // Update the value state with the mod list
+				setMods(modList); // Update the mods state with the mod list
+				console.log(modList);
+			}} />
 			<Card className="pr-[10px] md:pr-10 pl-[10px] md:pl-10 min-w-[30vw] max-w-[90vw] md:w-[500px] w-[90vw] md:h-fit h-[90vh] overflow-x-hidden overflow-y-auto">
 				<CardHeader>
 					<CardTitle className="text-xl">
@@ -265,7 +273,7 @@ function App() {
 				<CardContent>
 					<form onSubmit={constructModpack}>
 						<div className="grid w-full items-center gap-4">
-							<ModsInput update={setMods} />
+							<ModsInput update={setMods} value={value} setValue={setValue} /> {/* Attach the ref to ModsInput */}
 							<ModLoaderChooser update={setSelectedLoader} />
 							<VersionChooser update={setSelectedVersion} />
 							<WebsiteSelector selectedSites={selectedSites} update={setSelectedSites} />

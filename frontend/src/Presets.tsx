@@ -16,7 +16,12 @@ import { Search, Copy, BookOpen, Package, FileDown } from "lucide-react"
 import { loadPresets, type ModPreset } from "@/lib/presets"
 import { toast } from "@/hooks/use-toast"
 
-function Presets() {
+interface PresetsProps {
+	update: (value: string[]) => void; // Function to update the mod list in the parent component
+}
+
+
+function Presets({ update }: PresetsProps) {
 	const [searchTerm, setSearchTerm] = useState("")
 	const [presets, setPresets] = useState<ModPreset[]>([])
 	const [activeTab, setActiveTab] = useState("all")
@@ -51,12 +56,11 @@ function Presets() {
 	}
 
 	const pasteToTextarea = (modList: string[]) => {
-		// const text = modList.join("\n")
-		// setMainTextarea(text)
-		// toast({
-		// 	title: "Pasted to textarea",
-		// 	description: "Mod list has been pasted to the main textarea",
-		// })
+		update(modList);
+		toast({
+			title: "Pasted to textarea",
+			description: "Mod list has been pasted to the editable list",
+		});
 	}
 
 	return (
@@ -114,7 +118,13 @@ function Presets() {
 													className={
 														preset.modLoader === "Forge"
 															? "bg-[#B86A35] hover:bg-[#A05A25]"
-															: "bg-[#4A7DAC] hover:bg-[#3A6D9C]"
+															: preset.modLoader === "Fabric"
+																? "bg-[#3B82F6] hover:bg-[#2B6CBF]"
+																: preset.modLoader === "NeoForge"
+																	? "bg-[#6A4B8A] hover:bg-[#5A3B6A]"
+																	: preset.modLoader === "Quilt"
+																		? "bg-[#FBBF24] hover:bg-[#D69E2E]"
+																		: "bg-[#5C5C5C] hover:bg-[#4A4A4A]"
 													}
 												>
 													{preset.modLoader}
