@@ -5,11 +5,13 @@ import App from './App.tsx'
 import { Toaster } from '@/components/ui/toaster'
 import { TooltipProvider } from "@/components/ui/tooltip"
 import ThemeToggle from './ThemeToggle.tsx'
+import Presets from './Presets.tsx'
 
 createRoot(document.getElementById('root')!).render(
 	<StrictMode>
 		<TooltipProvider>
 			<ThemeToggle />
+			<Presets />
 			<App />
 			<Toaster />
 		</TooltipProvider>

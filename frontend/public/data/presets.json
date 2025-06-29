@@ -1,0 +1,92 @@
+[
+	{
+		"id": 1,
+		"title": "Adventure Explorer Pack",
+		"version": "1.19.2",
+		"modLoader": "Forge",
+		"category": "Adventure",
+		"description": "Perfect for exploration and adventure with new biomes and dungeons",
+		"mods": [
+			"JourneyMap 5.9.0",
+			"Biomes O' Plenty 16.0.0",
+			"Waystones 11.1.0",
+			"Sophisticated Backpacks 3.18.40",
+			"Dungeon Crawl 2.3.11",
+			"Aquaculture 2.3.10",
+			"Artifacts 7.1.1",
+			"Better Combat 1.7.1"
+		]
+	},
+	{
+		"id": 2,
+		"title": "Tech Enthusiast",
+		"version": "1.18.2",
+		"modLoader": "Forge",
+		"category": "Technology",
+		"description": "For those who love automation and machinery",
+		"mods": [
+			"Create 0.5.0g",
+			"Mekanism 10.2.5",
+			"Applied Energistics 2 11.1.4",
+			"Immersive Engineering 8.2.0",
+			"Refined Storage 1.10.2",
+			"Industrial Foregoing 3.3.0",
+			"Thermal Expansion 9.2.0",
+			"Botania r1.18-431"
+		]
+	},
+	{
+		"id": 3,
+		"title": "Magic & Mysticism",
+		"version": "1.19.4",
+		"modLoader": "Fabric",
+		"category": "Magic",
+		"description": "Explore magical abilities and mystical artifacts",
+		"mods": [
+			"Ars Nouveau 3.17.9",
+			"Blood Magic 3.2.6",
+			"Botania r1.19-436",
+			"Malum 1.5.1",
+			"Occultism 1.42.0",
+			"Forbidden & Arcanus 2.1.2",
+			"Eidolon 0.5.0",
+			"Theurgy 1.3.1"
+		]
+	},
+	{
+		"id": 4,
+		"title": "Performance Enhancer",
+		"version": "1.20.1",
+		"modLoader": "Fabric",
+		"category": "Utility",
+		"description": "Optimize your Minecraft experience with these performance mods",
+		"mods": [
+			"Sodium 0.5.0",
+			"Lithium 0.11.1",
+			"Phosphor 0.8.1",
+			"FerriteCore 5.2.0",
+			"Starlight 1.1.1",
+			"LazyDFU 0.1.3",
+			"EntityCulling 1.6.1",
+			"Memory Leak Fix 1.0.0"
+		]
+	},
+	{
+		"id": 5,
+		"title": "Vanilla Plus",
+		"version": "1.20.1",
+		"modLoader": "Forge",
+		"category": "Quality of Life",
+		"description": "Enhances vanilla gameplay without changing core mechanics",
+		"mods": [
+			"Just Enough Items 13.1.0",
+			"Mouse Tweaks 2.23",
+			"AppleSkin 2.4.2",
+			"Inventory Tweaks 1.16.5-2.0.0",
+			"Jade 10.3.1",
+			"Controlling 10.0+7",
+			"Clumps 9.0.0+14",
+			"Fast Leaf Decay 30"
+		]
+	}
+]

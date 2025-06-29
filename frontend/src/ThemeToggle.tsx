@@ -45,7 +45,6 @@ function ThemeToggle() {
 			</TooltipTrigger>
 			<TooltipContent>Toggle theme</TooltipContent>
 		</Tooltip>
-
 	);
 }
 
