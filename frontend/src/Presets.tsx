@@ -73,7 +73,7 @@ function Presets({ update }: PresetsProps) {
 			</SheetTrigger>
 			<SheetContent side="right" className="w-full sm:max-w-md md:max-w-lg">
 				<SheetHeader>
-					<SheetTitle className="">Mod Presets</SheetTitle>
+					<SheetTitle className="font-extrabold">Mod Presets</SheetTitle>
 					<SheetDescription className="dark:text-[#A8A8A8] text-[#949494]">
 						Browse and select from various mod presets for your Minecraft experience.
 					</SheetDescription>
@@ -125,14 +125,14 @@ function Presets({ update }: PresetsProps) {
 										className="dark:bg-[#161616] p-4 rounded-lg border dark:border-[#333333] dark:hover:border-[#5f5f5f] transition-colors bg-[#efefef] border-[#d0d0d0] hover:border-[#ababab]"
 									>
 										<div className="flex justify-between items-start mb-2">
-											<h3 className="font-bold dark:text-[#E0D4B0] text-[#6b6561]">{preset.title}</h3>
+											<h3 className="font-extrabold dark:text-[#E0D4B0] text-[#6b6561]">{preset.title}</h3>
 											<div className="flex gap-2">
 												<Badge variant="outline" className="dark:bg-[#292929] dark:text-[#a8a8a8] dark:border-[#5C5C5C] bg-[#e2e2e2] text-[#5f5f5f] border-[#c4c4c4]">
 													{preset.version}
 												</Badge>
 												<Badge
 													className={
-														preset.modLoader === "Forge"
+														(preset.modLoader === "Forge"
 															? "bg-[#ff8432] hover:bg-[#ea823d]"
 															: preset.modLoader === "Fabric"
 																? "bg-[#6ba4ff] hover:bg-[#6798d7]"
@@ -141,7 +141,7 @@ function Presets({ update }: PresetsProps) {
 																	: preset.modLoader === "Quilt"
 																		? "bg-[#FBBF24] hover:bg-[#D69E2E]"
 																		: "bg-[#5C5C5C] hover:bg-[#4A4A4A]"
-													}
+														) + " font-bold"}
 												>
 													{preset.modLoader}
 												</Badge>
@@ -155,7 +155,7 @@ function Presets({ update }: PresetsProps) {
 											</div>
 											<div className="dark:bg-[#1E1E1E] bg-[#dddddd] p-2 rounded text-xs dark:text-[#A8A8A8] text-[#6c6c6c] max-h-[100px] overflow-y-auto">
 												{preset.mods.map((mod, index) => (
-													<div key={index} className="mb-1 last:mb-0">
+													<div key={index} className="mb-1 last:mb-0 font-normal">
 														{mod}
 													</div>
 												))}

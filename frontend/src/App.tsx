@@ -15,7 +15,7 @@ import {
 	AlertDialogDescription,
 	AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { Package, Ban, Check, List, Download } from "lucide-react";
+import { Package, Ban, Check, List, Download, Workflow } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import ModLoaderChooser from './ModLoaderChooser';
 import ModsInput from './ModsInput';
@@ -259,7 +259,7 @@ function App() {
 		<>
 			<Card className="pr-[10px] md:pr-10 pl-[10px] md:pl-10 min-w-[30vw] max-w-[90vw] md:w-[500px] w-[90vw] md:h-fit h-[90vh] overflow-x-hidden overflow-y-auto">
 				<CardHeader>
-					<CardTitle className="text-xl">
+					<CardTitle className="text-xl font-bold">
 						<Package className="h-6 w-6 inline-block mr-2" />
 						Minecraft Modpack Maker
 					</CardTitle>
@@ -278,6 +278,7 @@ function App() {
 								console.log(modList);
 							}} />
 							<Button type="submit" variant="secondary" className="w-full">
+								<Workflow className="h-4 w-4 inline mr-2" />
 								Construct Modpack
 							</Button>
 						</div>
