@@ -88,5 +88,37 @@
 			"Clumps 9.0.0+14",
 			"Fast Leaf Decay 30"
 		]
+	},
+	{
+		"id": 6,
+		"title": "NeoForge Essentials",
+		"version": "1.20.1",
+		"modLoader": "NeoForge",
+		"category": "Core Mods",
+		"description": "Essential mods for NeoForge modpacks",
+		"mods": [
+			"NeoForge Essentials 1.0.0",
+			"NeoForge API 1.0.0",
+			"NeoForge Tweaks 1.0.0",
+			"NeoForge Utils 1.0.0"
+		]
+	},
+	{
+		"id": 7,
+		"title": "Quilt Starter Pack",
+		"version": "1.20.1",
+		"modLoader": "Quilt",
+		"category": "Core Mods",
+		"description": "A basic set of mods to get started with Quilt",
+		"mods": [
+			"Quilt Standard Libraries 1.0.0",
+			"Quilt Fabric API 1.0.0",
+			"Quilt Loader 1.0.0",
+			"Quilt Mod Menu 1.0.0",
+			"Quilt Command API 1.0.0",
+			"Quilt Resource Loader 1.0.0",
+			"Quilt Networking 1.0.0",
+			"Quilt Fabric Language Kotlin 1.0.0"
+		]
 	}
 ]

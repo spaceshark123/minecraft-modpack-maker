@@ -257,11 +257,6 @@ function App() {
 
 	return (
 		<>
-			<Presets update={(modList: string[]) => {
-				setValue(modList.join('\n')); // Update the value state with the mod list
-				setMods(modList); // Update the mods state with the mod list
-				console.log(modList);
-			}} />
 			<Card className="pr-[10px] md:pr-10 pl-[10px] md:pl-10 min-w-[30vw] max-w-[90vw] md:w-[500px] w-[90vw] md:h-fit h-[90vh] overflow-x-hidden overflow-y-auto">
 				<CardHeader>
 					<CardTitle className="text-xl">
@@ -277,6 +272,11 @@ function App() {
 							<ModLoaderChooser update={setSelectedLoader} />
 							<VersionChooser update={setSelectedVersion} />
 							<WebsiteSelector selectedSites={selectedSites} update={setSelectedSites} />
+							<Presets update={(modList: string[]) => {
+								setValue(modList.join('\n')); // Update the value state with the mod list
+								setMods(modList); // Update the mods state with the mod list
+								console.log(modList);
+							}} />
 							<Button type="submit" variant="secondary" className="w-full">
 								Construct Modpack
 							</Button>
