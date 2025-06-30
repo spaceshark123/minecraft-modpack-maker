@@ -90,13 +90,29 @@ function Presets({ update }: PresetsProps) {
 						/>
 					</div>
 
-					<Tabs defaultValue="all" onValueChange={setActiveTab}>
-						<TabsList className="dark:bg-[#262626] bg-[#f0f0f0]">
-							<TabsTrigger value="all" className="tab dark:bg-[#262626] dark:data-[state=active]:bg-[#f0f0f0] dark:data-[state=active]:text-black bg-[#f0f0f0]">All</TabsTrigger>
-							<TabsTrigger value="forge" className="tab dark:bg-[#262626] dark:data-[state=active]:bg-[#f0f0f0] dark:data-[state=active]:text-black bg-[#f0f0f0]">Forge</TabsTrigger>
-							<TabsTrigger value="fabric" className="tab dark:bg-[#262626] dark:data-[state=active]:bg-[#f0f0f0] dark:data-[state=active]:text-black bg-[#f0f0f0]">Fabric</TabsTrigger>
-							<TabsTrigger value="neoforge" className="tab dark:bg-[#262626] dark:data-[state=active]:bg-[#f0f0f0] dark:data-[state=active]:text-black bg-[#f0f0f0]">NeoForge</TabsTrigger>
-							<TabsTrigger value="quilt" className="tab dark:bg-[#262626] dark:data-[state=active]:bg-[#f0f0f0] dark:data-[state=active]:text-black bg-[#f0f0f0]">Quilt</TabsTrigger>
+					<Tabs defaultValue="all" onValueChange={setActiveTab} className="relative">
+						<TabsList className="dark:bg-[#262626] bg-[#f0f0f0] relative overflow-hidden grid grid-cols-5 h-[2.5rem]">
+							<div
+								className="absolute top-0 bottom-0 dark:bg-white bg-[#969696] rounded-sm transition-all duration-300 ease-out"
+								style={{
+									width: "20%",
+									left:
+										activeTab === "all"
+											? "0%"
+											: activeTab === "forge"
+												? "20%"
+												: activeTab === "fabric"
+													? "40%"
+													: activeTab === "neoforge"
+														? "60%"
+														: "80%",
+								}}
+							/>
+							<TabsTrigger value="all" className="tab relative z-10 data-[state=active]:bg-transparent dark:data-[state=active]:text-black data-[state=active]:text-white">All</TabsTrigger>
+							<TabsTrigger value="forge" className="tab relative z-10 data-[state=active]:bg-transparent dark:data-[state=active]:text-black data-[state=active]:text-white">Forge</TabsTrigger>
+							<TabsTrigger value="fabric" className="tab relative z-10 data-[state=active]:bg-transparent dark:data-[state=active]:text-black data-[state=active]:text-white">Fabric</TabsTrigger>
+							<TabsTrigger value="neoforge" className="tab relative z-10 data-[state=active]:bg-transparent dark:data-[state=active]:text-black data-[state=active]:text-white">NeoForge</TabsTrigger>
+							<TabsTrigger value="quilt" className="tab relative z-10 data-[state=active]:bg-transparent dark:data-[state=active]:text-black data-[state=active]:text-white">Quilt</TabsTrigger>
 						</TabsList>
 					</Tabs>
 

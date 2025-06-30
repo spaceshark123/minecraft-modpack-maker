@@ -50,6 +50,7 @@ button {
   font-family: inherit;
   cursor: pointer;
   transition: border-color 0.25s;
+  box-shadow: none !important;
 }
 button:not(.tab):hover {
   border-color: #646cff;
