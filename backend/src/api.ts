@@ -78,13 +78,22 @@ interface CurseforgeMod {
 	}
 }
 
+// Mod hit interface for comparing mod names
+interface ModHit {
+	title: string;
+	slug: string;
+	id: string;
+	image: string;
+	similarity: number;
+}
+
 const cleanModName = (modName: string): string => {
 	// normalize mod name (lowercase, trim, and remove extra spaces)
 	let cleanedModName = modName.toLowerCase().trim().replace(/\s+/g, ' ');
-	
+
 	// remove loaders mentioned inside parentheses or square brackets
 	cleanedModName = cleanedModName.replace(loaderParenthesisRegex, '').trim();
-	
+
 	// remove trailing loaders and special words
 	while (cleanedModName.length > 0) {
 		// find and remove trailing loaders
@@ -109,6 +118,51 @@ const cleanModName = (modName: string): string => {
 	}
 	return cleanedModName;
 };
+
+const removeTrailingSemver = (input: string): string => {
+	// Match a semver-like word at the end (e.g. "v1.2.3", "-0.1", "2.0-beta", etc.)
+	const semverRegex = /(?:\s+)?[A-Za-z-]*\d+(?:[\.-]\d+)*[A-Za-z-]*$/i;
+
+	return input.replace(semverRegex, '').trimEnd();
+}
+
+const similarityThreshold = 0.5;
+// Function to compare mod names and return similarity score, found status, and best match
+const compareModNames = (bestMatch: ModHit, title: string, slug: string, id: string, image: string, name: string, index: number): [found: boolean, bestMatch: ModHit] => {
+	// if name matches exactly, return the mod details
+	console.log('comparing', title.toLowerCase().trim(), 'to', name);
+	if (title.toLowerCase().trim() === name) {
+		bestMatch = { title, slug, id, image, similarity: 1 };
+		return [true, bestMatch];
+	}
+	// clean the mod name and the target name for better comparison
+	let cleanedModName = cleanModName(title);
+	let cleanedTarget = cleanModName(name);
+	console.log('After cleaning:', cleanedModName, 'vs', cleanedTarget);
+	if (cleanedModName === cleanedTarget) {
+		bestMatch = { title, slug, id, image, similarity: 1 };
+		return [true, bestMatch];
+	}
+	// calculate similarity between the mod title and the provided name using levenshtein distance (fuzzy matching)
+	let similarity = (1 - (levenshtein(cleanedTarget, cleanedModName) / Math.max(cleanedTarget.length, cleanedModName.length)));
+	// change similarity based on position (earlier is better)
+	similarity *= Math.pow(0.9, index);
+	if (similarity > similarityThreshold && similarity > bestMatch.similarity) {
+		bestMatch = { title, slug, id, image, similarity };
+		return [false, bestMatch];
+	} else if (cleanedModName.replace(/\s+/g, '') === cleanedTarget.replace(/\s+/g, '')) {
+		// they match without spaces, so we can consider them equal, but not exact
+		similarity = 0.9;
+		bestMatch = { title, slug, id, image, similarity };
+		return [true, bestMatch];
+	} else if (removeTrailingSemver(cleanedModName) === removeTrailingSemver(cleanedTarget)) {
+		// they match without semver, so we can consider them equal, but not exact
+		similarity = 0.9;
+		bestMatch = { title, slug, id, image, similarity };
+		return [true, bestMatch];
+	}
+	return [false, bestMatch];
+}
 
 const apiRouter = express.Router();
 
@@ -146,11 +200,11 @@ apiRouter.get('/file', async (req, res) => {
 		const response = await axios.get(url, {
 			responseType: 'stream', // This is important for handling binary data as a stream
 		});
-		
+
 		// Set headers for the file download, including content type and file name
 		res.setHeader('Content-Type', response.headers['content-type']);
 		res.setHeader('Content-Disposition', `attachment`);
-		
+
 		// Pipe the response data directly to the client
 		response.data.pipe(res);
 	} catch (error) {
@@ -174,7 +228,7 @@ apiRouter.get("/versions", async (req, res) => {
 		const response = await axios.get(url);
 		const $ = cheerio.load(response.data);
 		const versionsSet = new Set();
-		
+
 		$("span").each((_, element) => {
 			const text = $(element).text().trim();
 			if (
@@ -185,7 +239,7 @@ apiRouter.get("/versions", async (req, res) => {
 				versionsSet.add(text);
 			}
 		});
-		
+
 		// Convert set to array and sort
 		const uniqueVersions: string[] = Array.from(versionsSet) as string[];
 		const sortedVersions = uniqueVersions.sort((a, b) => {
@@ -198,7 +252,7 @@ apiRouter.get("/versions", async (req, res) => {
 			}
 			return 0;
 		});
-		
+
 		res.json({
 			count: sortedVersions.length,
 			versions: sortedVersions,
@@ -247,61 +301,35 @@ modrinthRouter.get('/', async (req, res) => {
 			}
 		});
 		if (!response) return;
-		
+
 		// Array to store the scraped mod details
-		let bestMatch = { title: '', slug: '', id: '', image: '', similarity: 0 };
+		let bestMatch: ModHit = { title: '', slug: '', id: '', image: '', similarity: 0 };
 		let found = false;
 		let count = 0;
 		const similarityThreshold = 0.5;
-		
+
 		// find the mod whose title best matches the provided name (the name doesn't have to match exactly)
 		response.hits.forEach((element, index) => {
 			if (found) return;
 			count++;
-			
+
 			// Extract the mod title, slug, and image
 			const title = element.title;
 			const slug = element.slug; // slug is the unique identifier for the mod
 			const id = element.project_id;
 			const image = element.icon_url;
-			
-			// if name matches exactly, return the mod details
-			console.log('comparing', title.toLowerCase().trim(), 'to', name);
-			if (title.toLowerCase().trim() === name) {
-				bestMatch = { title, slug, id, image, similarity: 1 };
-				found = true;
-				return;
-			}
-			// clean the mod name and the target name for better comparison
-			let cleanedModName = cleanModName(title);
-			let cleanedTarget = cleanModName(name);
-			console.log('After cleaning:', cleanedModName, 'vs', cleanedTarget);
-			if (cleanedModName === cleanedTarget) {
-				bestMatch = { title, slug, id, image, similarity: 1 };
-				found = true;
-				return;
-			}
-			// calculate similarity between the mod title and the provided name using levenshtein distance (fuzzy matching)
-			let similarity = (1 - (levenshtein(cleanedTarget, cleanedModName) / Math.max(cleanedTarget.length, cleanedModName.length)));
-			// change similarity based on position (earlier is better)
-			similarity *= Math.pow(0.9, index);
-			if (similarity > similarityThreshold && similarity > bestMatch.similarity) {
-				bestMatch = { title, slug, id, image, similarity };
-			} else if (cleanedModName.replace(/\s+/g, '') === cleanedTarget.replace(/\s+/g, '')) {
-				// they match without spaces, so we can consider them equal, but not exact
-				similarity = 0.9;
-				found = true;
-				bestMatch = { title, slug, id, image, similarity };
-			}
+
+			// compare the mod title with the provided name
+			[found, bestMatch] = compareModNames(bestMatch, title, slug, id, image, name, index);
 		});
 		console.log('Scraped', count, 'mods on Modrinth for', name, ": " + (!found && bestMatch.similarity < similarityThreshold ? 'No match found' : 'Match found'));
-		
+
 		// If no mod was found, return a 404 error
 		if (!found && bestMatch.similarity < similarityThreshold) {
 			res.status(404).json({ error: 'Mod not found.' });
 			return;
 		}
-		
+
 		// Send the scraped mod data as a JSON response
 		res.json(bestMatch);
 	} catch (error) {
@@ -348,9 +376,9 @@ modrinthRouter.get('/download', async (req, res) => {
 			}
 		});
 		if (!response) return;
-		
+
 		console.log('Found', response[0].files.length, `files for mod ${slug} version ${version} loader ${loader}`);
-		
+
 		// find the primary file for the latest release of the mod for the specified loader and game version
 		const file = response[0].files.find((file) => file.primary) || response[0].files[0];
 		res.json({ url: file.url, filename: file.filename });
@@ -405,61 +433,35 @@ curseforgeRouter.get('/', async (req, res) => {
 			}
 		});
 		if (!response) return;
-		
+
 		// Array to store the scraped mod details
-		let bestMatch = { title: '', slug: '', id: '', image: '', similarity: 0 };
+		let bestMatch: ModHit = { title: '', slug: '', id: '', image: '', similarity: 0 };
 		let found = false;
 		let count = 0;
 		const similarityThreshold = 0.5;
-		
+
 		// find the mod whose title best matches the provided name (the name doesn't have to match exactly)
 		response.data.forEach((element, index) => {
 			if (found) return;
 			count++;
-			
+
 			// Extract the mod title, slug, and image
 			const title = element.name;
 			const slug = element.slug; // slug is the unique identifier for the mod
 			const id = String(element.id);
 			const image = element.logo.url;
-			
-			// if name matches exactly, return the mod details
-			console.log('comparing', title.toLowerCase().trim(), 'to', name);
-			if (title.toLowerCase().trim() === name) {
-				bestMatch = { title, slug, id, image, similarity: 1 };
-				found = true;
-				return;
-			}
-			// clean the mod name and the target name for better comparison
-			let cleanedModName = cleanModName(title);
-			let cleanedTarget = cleanModName(name);
-			console.log('After cleaning:', cleanedModName, 'vs', cleanedTarget);
-			if (cleanedModName === cleanedTarget) {
-				bestMatch = { title, slug, id, image, similarity: 1 };
-				found = true;
-				return;
-			}
-			// calculate similarity between the mod title and the provided name using levenshtein distance (fuzzy matching)
-			let similarity = (1 - (levenshtein(cleanedTarget, cleanedModName) / Math.max(cleanedTarget.length, cleanedModName.length)));
-			// change similarity based on position (earlier is better)
-			similarity *= Math.pow(0.9, index);
-			if (similarity > similarityThreshold && similarity > bestMatch.similarity) {
-				bestMatch = { title, slug, id, image, similarity };
-			} else if (cleanedModName.replace(/\s+/g, '') === cleanedTarget.replace(/\s+/g, '')) {
-				// they match without spaces, so we can consider them equal, but not exact
-				similarity = 0.9;
-				found = true;
-				bestMatch = { title, slug, id, image, similarity };
-			}
+
+			// compare the mod title with the provided name
+			[found, bestMatch] = compareModNames(bestMatch, title, slug, id, image, name, index);
 		});
 		console.log('Scraped', count, 'mods on Curseforge for', name, ": " + (!found && bestMatch.similarity < similarityThreshold ? 'No match found' : 'Match found'));
-		
+
 		// If no mod was found, return a 404 error
 		if (!found && bestMatch.similarity < similarityThreshold) {
 			res.status(404).json({ error: 'Mod not found.' });
 			return;
 		}
-		
+
 		// Send the scraped mod data as a JSON response
 		res.json(bestMatch);
 	} catch (error) {
@@ -506,7 +508,7 @@ curseforgeRouter.get('/download', async (req, res) => {
 				return;
 			}
 		});
-		if (!response || response.data.length === 0) { 
+		if (!response || response.data.length === 0) {
 			res.status(404).json({ error: 'No files found for mod.' });
 			return;
 		}
@@ -514,9 +516,9 @@ curseforgeRouter.get('/download', async (req, res) => {
 			res.status(404).json({ error: 'File not available for download.' });
 			return;
 		}
-		
+
 		console.log(`Found a file for mod ${id} version ${version} loader ${loader}`);
-		
+
 		// find the primary file for the latest release of the mod for the specified loader and game version
 		const file = response.data[0];
 		res.status(200).json({ url: file.downloadUrl, filename: file.fileName });

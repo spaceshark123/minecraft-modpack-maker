@@ -178,7 +178,7 @@ function Presets({ update }: PresetsProps) {
 												onClick={() => pasteToTextarea(preset.mods)}
 											>
 												<FileDown className="h-3 w-3 mr-1" />
-												Paste to Textarea
+												Paste to Mods List
 											</Button>
 										</div>
 									</div>
